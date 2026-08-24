@@ -1,0 +1,43 @@
+<Files "countdown.js">
+    Require all denied
+    <If "%{HTTP_REFERER} =~ m#^http://localhost/final_form/#">
+        Require all granted
+    </If>
+</Files>
+
+<Files "disable.js">
+    Require all denied
+    <If "%{HTTP_REFERER} =~ m#^http://localhost/final_form/#">
+        Require all granted
+    </If>
+</Files>
+
+<Files "login.js">
+    Require all denied
+    <If "%{HTTP_REFERER} =~ m#^http://localhost/final_form/#">
+        Require all granted
+    </If>
+</Files>
+
+<Files "show_password.js">
+    Require all denied
+    <If "%{HTTP_REFERER} =~ m#^http://localhost/final_form/#">
+        Require all granted
+    </If>
+</Files>
+
+<Files "signup.js">
+    Require all denied
+    <If "%{HTTP_REFERER} =~ m#^http://localhost/final_form/#">
+        Require all granted
+    </If>
+</Files>
+
+<Files "val_login.js">
+    Require all denied
+    <If "%{HTTP_REFERER} =~ m#^http://localhost/final_form/#">
+        Require all granted
+    </If>
+</Files>
+
+ErrorDocument 403 http://localhost/final_form/html/404.html
