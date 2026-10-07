@@ -1,7 +1,7 @@
 <?php
 /**
  * PHPMailer Configuration and Mail Helper
- * Project: MOTOPARTS Password Recovery Flow
+ * Project: ONE PIECE Password Recovery Flow
  */
 
 // Autoload Composer dependencies (PHPMailer)
@@ -39,7 +39,7 @@ if (!defined('SMTP_AUTH')) define('SMTP_AUTH', true);
 if (!defined('SMTP_USER')) define('SMTP_USER', getenv('SMTP_USER') ?: 'jamesrel.galagate@gmail.com');
 if (!defined('SMTP_PASS')) define('SMTP_PASS', getenv('SMTP_PASS') ?: 'znmfgsezgfukgmyn');
 if (!defined('SMTP_FROM_EMAIL')) define('SMTP_FROM_EMAIL', getenv('SMTP_FROM_EMAIL') ?: 'jamesrel.galagate@gmail.com');
-if (!defined('SMTP_FROM_NAME')) define('SMTP_FROM_NAME', getenv('SMTP_FROM_NAME') ?: 'MOTOPARTS Support');
+if (!defined('SMTP_FROM_NAME')) define('SMTP_FROM_NAME', getenv('SMTP_FROM_NAME') ?: 'ONE PIECE Support');
 
 /**
  * Configure and get a ready-to-use PHPMailer instance
@@ -99,7 +99,7 @@ function send_otp_email($to_email, $to_name, $otp, $expires_minutes = 10) {
 
         // Content
         $mail->isHTML(true);
-        $mail->Subject = "Password Reset OTP Code - MOTOPARTS";
+        $mail->Subject = "Password Reset OTP Code - ONE PIECE";
 
         $escaped_name = htmlspecialchars($to_name ?: 'User');
         $escaped_otp = htmlspecialchars($otp);
@@ -140,17 +140,18 @@ function send_otp_email($to_email, $to_name, $otp, $expires_minutes = 10) {
                     background: linear-gradient(135deg, #181d28 0%, #12161f 100%);
                     padding: 26px 30px;
                     text-align: center;
-                    border-bottom: 2px solid #ff5500;
+                    border-bottom: 2px solid #f59e0b;
                 }
                 .logo-text {
                     font-size: 26px;
                     font-weight: 900;
-                    letter-spacing: 1px;
+                    letter-spacing: 1.5px;
                     color: #ffffff;
                     text-transform: uppercase;
                 }
                 .logo-parts {
-                    color: #ff5500;
+                    color: #f59e0b;
+                    margin-left: 2px;
                 }
                 .content-body {
                     padding: 32px 30px;
@@ -165,8 +166,8 @@ function send_otp_email($to_email, $to_name, $otp, $expires_minutes = 10) {
                     margin-bottom: 12px;
                 }
                 .otp-card {
-                    background: rgba(255, 85, 0, 0.07);
-                    border: 2px dashed #ff5500;
+                    background: rgba(245, 158, 11, 0.07);
+                    border: 2px dashed #f59e0b;
                     border-radius: 12px;
                     padding: 22px 20px;
                     text-align: center;
@@ -177,21 +178,21 @@ function send_otp_email($to_email, $to_name, $otp, $expires_minutes = 10) {
                     font-weight: 700;
                     letter-spacing: 1.5px;
                     text-transform: uppercase;
-                    color: #ff8c42;
+                    color: #fbbf24;
                     margin-bottom: 8px;
                 }
                 .otp-number {
                     font-size: 38px;
                     font-weight: 900;
                     letter-spacing: 8px;
-                    color: #ff5500;
+                    color: #f59e0b;
                     font-family: 'Courier New', monospace, sans-serif;
                 }
                 .expiry-pill {
                     display: inline-block;
                     margin-top: 10px;
-                    background: rgba(255, 85, 0, 0.18);
-                    color: #ffaa77;
+                    background: rgba(245, 158, 11, 0.18);
+                    color: #fbbf24;
                     font-size: 12px;
                     font-weight: 600;
                     padding: 4px 12px;
@@ -199,7 +200,7 @@ function send_otp_email($to_email, $to_name, $otp, $expires_minutes = 10) {
                 }
                 .alert-note {
                     background: rgba(255, 255, 255, 0.03);
-                    border-left: 3px solid #ff5500;
+                    border-left: 3px solid #f59e0b;
                     padding: 12px 16px;
                     border-radius: 4px;
                     font-size: 13px;
@@ -221,13 +222,13 @@ function send_otp_email($to_email, $to_name, $otp, $expires_minutes = 10) {
                 <table class='main-table' align='center' cellpadding='0' cellspacing='0'>
                     <tr>
                         <td class='header-bar'>
-                            <div class='logo-text'>MOTO<span class='logo-parts'>PARTS</span></div>
+                            <div class='logo-text'>ONE<span class='logo-parts'>PIECE</span></div>
                         </td>
                     </tr>
                     <tr>
                         <td class='content-body'>
                             <div class='greeting'>Hello, {$escaped_name}!</div>
-                            <p>We received a request to reset your password for your MOTOPARTS account.</p>
+                            <p>We received a request to reset your password for your ONE PIECE account.</p>
                             <p>Please use the following 6-digit One-Time PIN (OTP) to verify your identity and complete your password reset:</p>
                             
                             <div class='otp-card'>
@@ -237,13 +238,13 @@ function send_otp_email($to_email, $to_name, $otp, $expires_minutes = 10) {
                             </div>
                             
                             <div class='alert-note'>
-                                <strong>Security Notice:</strong> For your protection, never share this OTP with anyone. MOTOPARTS support will never ask for your OTP. If you did not initiate this request, you can safely ignore this email.
+                                <strong>Security Notice:</strong> For your protection, never share this OTP with anyone. ONE PIECE support will never ask for your OTP. If you did not initiate this request, you can safely ignore this email.
                             </div>
                         </td>
                     </tr>
                     <tr>
                         <td class='footer'>
-                            <p style='margin: 0 0 6px 0;'>&copy; " . date('Y') . " MOTOPARTS. All rights reserved.</p>
+                            <p style='margin: 0 0 6px 0;'>&copy; " . date('Y') . " ONE PIECE System. All rights reserved.</p>
                             <p style='margin: 0;'>This is an automated system message. Please do not reply directly to this email.</p>
                         </td>
                     </tr>
@@ -256,10 +257,10 @@ function send_otp_email($to_email, $to_name, $otp, $expires_minutes = 10) {
 
         // Plain text version for non-HTML email clients
         $mail->AltBody = "Hello {$to_name},\n\n"
-            . "Your MOTOPARTS password reset verification code is: {$otp}\n\n"
+            . "Your ONE PIECE password reset verification code is: {$otp}\n\n"
             . "This code is valid for {$expires_minutes} minutes.\n\n"
             . "If you did not request a password reset, please ignore this message.\n\n"
-            . "Best regards,\nMOTOPARTS Team";
+            . "Best regards,\nONE PIECE Team";
 
         $mail->send();
 

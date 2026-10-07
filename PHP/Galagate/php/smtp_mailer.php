@@ -1,6 +1,6 @@
 <?php
 /**
- * SMTP Mailer Bridge for MOTOPARTS
+ * SMTP Mailer Bridge for ONE PIECE
  * Bridges to centralized PHPMailer in PHP/includes/mail_config.php
  */
 

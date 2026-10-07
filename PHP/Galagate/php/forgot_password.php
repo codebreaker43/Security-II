@@ -391,15 +391,15 @@ if (isset($_SESSION['otp_status_msg'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forgot Password - MOTOPARTS</title>
+    <title>Password Recovery - ONE PIECE</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --accent-orange: #ff5500;
-            --accent-orange-hover: #ff6a1a;
-            --accent-orange-glow: rgba(255, 85, 0, 0.35);
+            --accent-orange: #f59e0b;
+            --accent-orange-hover: #d97706;
+            --accent-orange-glow: rgba(245, 158, 11, 0.35);
             --dark-bg: #0c0f14;
             --card-bg: #12161f;
             --input-bg: #151a24;
@@ -452,14 +452,38 @@ if (isset($_SESSION['otp_status_msg'])) {
             text-decoration: none;
         }
 
+        .logo-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.5));
+            transition: transform 0.3s ease;
+        }
+
+        .logo-link:hover .logo-icon {
+            transform: rotate(-8deg) scale(1.08);
+        }
+
         .logo-text {
             font-family: var(--font-heading);
             font-size: 1.45rem;
             font-weight: 900;
-            color: #ffffff;
+            letter-spacing: 1px;
+            line-height: 1;
         }
 
-        .logo-text .parts { color: var(--accent-orange); }
+        .logo-text .op-one {
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        .logo-text .op-piece {
+            font-weight: 900;
+            color: #fbbf24;
+            text-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+            margin-left: 3px;
+        }
 
         .btn-nav-login {
             padding: 0.5rem 1.25rem;
@@ -590,7 +614,7 @@ if (isset($_SESSION['otp_status_msg'])) {
         .btn-submit {
             width: 100%;
             height: 44px;
-            background: linear-gradient(135deg, #ff5500, #e64a00);
+            background: linear-gradient(135deg, #f59e0b, #ea580c);
             color: #ffffff;
             border: none;
             border-radius: 8px;
@@ -601,14 +625,14 @@ if (isset($_SESSION['otp_status_msg'])) {
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            box-shadow: 0 6px 20px rgba(255, 85, 0, 0.35);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
             transition: all 0.2s ease;
             margin-top: 0.5rem;
         }
 
         .btn-submit:hover {
             transform: translateY(-1px);
-            box-shadow: 0 8px 25px rgba(255, 85, 0, 0.5);
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.5);
         }
 
         .alert-box {
@@ -661,8 +685,38 @@ if (isset($_SESSION['otp_status_msg'])) {
     <nav class="navbar">
         <div class="navdiv">
             <a href="../../login.php" class="logo-link">
+                <div class="logo-icon">
+                    <svg width="28" height="28" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Crossed Bones -->
+                        <path d="M14 14 L50 50 M50 14 L14 50" stroke="#e2e8f0" stroke-width="5" stroke-linecap="round"/>
+                        <circle cx="12" cy="12" r="3.5" fill="#cbd5e1"/>
+                        <circle cx="12" cy="16" r="3.5" fill="#cbd5e1"/>
+                        <circle cx="52" cy="12" r="3.5" fill="#cbd5e1"/>
+                        <circle cx="52" cy="16" r="3.5" fill="#cbd5e1"/>
+                        <circle cx="12" cy="48" r="3.5" fill="#cbd5e1"/>
+                        <circle cx="12" cy="52" r="3.5" fill="#cbd5e1"/>
+                        <circle cx="52" cy="48" r="3.5" fill="#cbd5e1"/>
+                        <circle cx="52" cy="52" r="3.5" fill="#cbd5e1"/>
+                        <!-- Skull Base -->
+                        <circle cx="32" cy="34" r="14" fill="#f8fafc"/>
+                        <rect x="26" y="42" width="12" height="7" rx="2" fill="#f8fafc"/>
+                        <!-- Eye Sockets -->
+                        <circle cx="27.5" cy="35" r="3.2" fill="#0f172a"/>
+                        <circle cx="36.5" cy="35" r="3.2" fill="#0f172a"/>
+                        <!-- Teeth Lines -->
+                        <line x1="28.5" y1="44" x2="28.5" y2="48" stroke="#0f172a" stroke-width="1.3"/>
+                        <line x1="32" y1="44" x2="32" y2="48" stroke="#0f172a" stroke-width="1.3"/>
+                        <line x1="35.5" y1="44" x2="35.5" y2="48" stroke="#0f172a" stroke-width="1.3"/>
+                        <!-- Straw Hat Crown -->
+                        <ellipse cx="32" cy="24" rx="12" ry="7.5" fill="#f59e0b"/>
+                        <!-- Red Ribbon -->
+                        <ellipse cx="32" cy="27" rx="12.2" ry="3" fill="#ef4444"/>
+                        <!-- Straw Hat Brim -->
+                        <ellipse cx="32" cy="28" rx="22" ry="5" fill="#f59e0b"/>
+                    </svg>
+                </div>
                 <div class="logo-text">
-                    <span class="moto">MOTO</span><span class="parts">PARTS</span>
+                    <span class="op-one">ONE</span><span class="op-piece">PIECE</span>
                 </div>
             </a>
             <a href="../../login.php" class="btn-nav-login">Back to Login</a>
@@ -850,7 +904,7 @@ if (isset($_SESSION['otp_status_msg'])) {
 
     <!-- Footer -->
     <footer style="text-align: center; padding: 1.5rem; color: #64748b; font-size: 0.85rem; border-top: 1px solid rgba(255,255,255,0.05); margin-top: auto;">
-        <p>&copy; 2024 Moto Shop. All rights reserved.</p>
+        <p>&copy; <?php echo date('Y'); ?> ONE PIECE System. All rights reserved.</p>
     </footer>
 </body>
 
