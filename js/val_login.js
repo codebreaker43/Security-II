@@ -1,28 +1,30 @@
 // Required Asterisk
-// Add event listener when DOM content is fully loaded
-document.addEventListener("DOMContentLoaded", function() {
-    // Define an array of field IDs that require an asterisk
-    const requiredFields = [
-        'username', 'password' // List of required fields
-    ];
+function initAsterisks() {
+    const requiredFields = ['username', 'password'];
 
-    // Loop through each field in the requiredFields array
     requiredFields.forEach(fieldId => {
-        const inputElement = document.getElementById(fieldId); // Get input element by its ID
-        const requiredSpan = inputElement.previousElementSibling.querySelector('.required-asterisk'); // Find the asterisk span element
+        const inputElement = document.getElementById(fieldId);
+        if (!inputElement) return;
 
-        // Add an event listener to detect input changes
+        const prevLabel = inputElement.previousElementSibling;
+        const requiredSpan = prevLabel ? prevLabel.querySelector('.required-asterisk') : null;
+        if (!requiredSpan) return;
+
         inputElement.addEventListener('input', function() {
-            // If input is not empty, hide the asterisk
             if (inputElement.value.trim() !== '') {
-                requiredSpan.style.display = 'none'; // Hide the asterisk
+                requiredSpan.style.display = 'none';
             } else {
-                // Show the asterisk if input is empty
-                requiredSpan.style.display = 'inline'; // Display the asterisk
+                requiredSpan.style.display = 'inline';
             }
         });
     });
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener("DOMContentLoaded", initAsterisks);
+} else {
+    initAsterisks();
+}
 
 // Username Input Validation
 // Add an event listener to the username input for validation
@@ -122,22 +124,7 @@ document.getElementById('password').addEventListener('input', function () {
     }
 });
 
-// Show/Hide Password Functionality
-// Add event listener to the checkbox to toggle password visibility
-const showPassElem = document.getElementById('showPassword') || document.getElementById('togglePassword');
-if (showPassElem) {
-    showPassElem.addEventListener('click', function() {
-        let passwordField = document.getElementById('password'); // Get the password input field
-        if (passwordField) {
-            // Change the type of the password field based on the checkbox state
-            if (this.checked) {
-                passwordField.type = 'text'; // Show password
-            } else {
-                passwordField.type = 'password'; // Hide password
-            }
-        }
-    });
-}
+
 
 // Form Submission Validation
 // Add event listener to the form for validation on submission
@@ -156,19 +143,19 @@ if (loginFormElem) {
         // Check if the username field is empty
         if (username === '') {
             if (usernameError) {
-                usernameError.textContent = 'Username is required.'; // Error message for empty username
-                usernameError.style.color = 'red'; // Set error message color to red
+                usernameError.textContent = 'Username should not be empty.';
+                usernameError.style.color = '#ff4d4d';
             }
-            formIsValid = false; // Mark form as invalid
+            formIsValid = false;
         }
 
         // Check if the password field is empty
         if (password === '') {
             if (passwordError) {
-                passwordError.textContent = 'Password is required.'; // Error message for empty password
-                passwordError.style.color = 'red'; 
+                passwordError.textContent = 'Password should not be empty.';
+                passwordError.style.color = '#ff4d4d';
             }
-            formIsValid = false; // Mark form as invalid
+            formIsValid = false;
         }
 
         // If the form is not valid, prevent submission

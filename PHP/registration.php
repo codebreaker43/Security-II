@@ -34,80 +34,293 @@ $idno = $firstname = $middlename = $lastname = $suffix = $birthdate = $age = $se
 
 // Process the form data when submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Store input in variables
-    $idno = isset($_POST["idno"]) ? trim(mysqli_real_escape_string($conn, $_POST["idno"])) : '';
-    
-    // Auto-generate ID if empty or if submitted ID is invalid / already taken
+    // Store raw input in session for repopulating if validation fails
+    $_SESSION['form_data'] = $_POST;
+
+    // Collect and trim inputs
+    $idno = isset($_POST["idno"]) ? trim($_POST["idno"]) : '';
+    $firstname = isset($_POST["firstname"]) ? trim($_POST["firstname"]) : '';
+    $middlename = isset($_POST["middlename"]) ? trim($_POST["middlename"]) : '';
+    $lastname = isset($_POST["lastname"]) ? trim($_POST["lastname"]) : '';
+    $suffix = isset($_POST["suffix"]) ? trim($_POST["suffix"]) : '';
+    $customSuffix = isset($_POST["customSuffix"]) ? trim($_POST["customSuffix"]) : '';
+    $birthdate = isset($_POST["birthdate"]) ? trim($_POST["birthdate"]) : '';
+    $sex = isset($_POST["sex"]) ? trim($_POST["sex"]) : '';
+    $country = isset($_POST["country"]) ? trim($_POST["country"]) : 'Philippines';
+    $purokstreet = isset($_POST["purokstreet"]) ? trim($_POST["purokstreet"]) : '';
+    $brgy = isset($_POST["brgy"]) ? trim($_POST["brgy"]) : '';
+    $municipal = isset($_POST["municipal"]) ? trim($_POST["municipal"]) : '';
+    $province = isset($_POST["province"]) ? trim($_POST["province"]) : '';
+    $zipcode = isset($_POST["zipcode"]) ? trim($_POST["zipcode"]) : '';
+    $username = isset($_POST["username"]) ? strtolower(trim($_POST["username"])) : '';
+    $email = isset($_POST["email"]) ? strtolower(trim($_POST["email"])) : '';
+    $password = isset($_POST["password"]) ? $_POST["password"] : '';
+    $confirmPassword = isset($_POST["confirmPassword"]) ? $_POST["confirmPassword"] : '';
+
+    $security_question1 = isset($_POST["security_question1"]) ? trim($_POST["security_question1"]) : '';
+    $security_answer1 = isset($_POST["security_answer1"]) ? trim($_POST["security_answer1"]) : '';
+    $security_question2 = isset($_POST["security_question2"]) ? trim($_POST["security_question2"]) : '';
+    $security_answer2 = isset($_POST["security_answer2"]) ? trim($_POST["security_answer2"]) : '';
+    $security_question3 = isset($_POST["security_question3"]) ? trim($_POST["security_question3"]) : '';
+    $security_answer3 = isset($_POST["security_answer3"]) ? trim($_POST["security_answer3"]) : '';
+
+    // Auto-generate or validate ID Number
     if (empty($idno) || !preg_match('/^\d{4}-\d{4}$/', $idno)) {
         $idno = generateNextIdNo($conn);
     } else {
-        $exist_idno = mysqli_query($conn, "SELECT id FROM user WHERE `idno` = '$idno'");
-        if (mysqli_num_rows($exist_idno) > 0) {
+        $stmt_chk_id = mysqli_prepare($conn, "SELECT idno FROM user WHERE idno = ? LIMIT 1");
+        mysqli_stmt_bind_param($stmt_chk_id, "s", $idno);
+        mysqli_stmt_execute($stmt_chk_id);
+        if (mysqli_num_rows(mysqli_stmt_get_result($stmt_chk_id)) > 0) {
             $idno = generateNextIdNo($conn);
+        }
+        mysqli_stmt_close($stmt_chk_id);
+    }
+    $_SESSION['form_data']['idno'] = $idno;
+
+    $errors = [];
+
+    // 1. Name validations
+    if (empty($firstname)) {
+        $errors[] = "First name is required.";
+    } elseif (strlen($firstname) < 3 || strlen($firstname) > 25) {
+        $errors[] = "First name must be between 3 and 25 characters.";
+    } elseif (!preg_match('/^[a-zA-Z\s]+$/', $firstname)) {
+        $errors[] = "First name can only contain letters and spaces.";
+    }
+
+    if (!empty($middlename)) {
+        if (strlen($middlename) > 25) {
+            $errors[] = "Middle name/initial cannot exceed 25 characters.";
+        } elseif (!preg_match('/^[a-zA-Z\s]+$/', $middlename)) {
+            $errors[] = "Middle name can only contain letters and spaces.";
         }
     }
 
-    $firstname = mysqli_real_escape_string($conn, $_POST["firstname"]);
-    $middlename = mysqli_real_escape_string($conn, $_POST["middlename"]);
-    $lastname = mysqli_real_escape_string($conn, $_POST["lastname"]);
-    $suffix = mysqli_real_escape_string($conn, $_POST["suffix"]);
-    $birthdate = mysqli_real_escape_string($conn, $_POST["birthdate"]);
-    $age = mysqli_real_escape_string($conn, $_POST["age"]);
-    $sex = mysqli_real_escape_string($conn, $_POST["sex"]);
-    $country = mysqli_real_escape_string($conn, $_POST["country"]);
-    $purokstreet = mysqli_real_escape_string($conn, $_POST["purokstreet"]);
-    $brgy = mysqli_real_escape_string($conn, $_POST["brgy"]);
-    $municipal = mysqli_real_escape_string($conn, $_POST["municipal"]);
-    $province = mysqli_real_escape_string($conn, $_POST["province"]);
-    $zipcode = mysqli_real_escape_string($conn, $_POST["zipcode"]);
-    $username = mysqli_real_escape_string($conn, $_POST["username"]);
-    $email = mysqli_real_escape_string($conn, $_POST["email"]);
-    $password = password_hash($_POST["password"], PASSWORD_DEFAULT);
+    if (empty($lastname)) {
+        $errors[] = "Last name is required.";
+    } elseif (strlen($lastname) < 3 || strlen($lastname) > 25) {
+        $errors[] = "Last name must be between 3 and 25 characters.";
+    } elseif (!preg_match('/^[a-zA-Z\s]+$/', $lastname)) {
+        $errors[] = "Last name can only contain letters and spaces.";
+    }
 
-    // Security Questions
-    $security_question1 = mysqli_real_escape_string($conn, $_POST['security_question1']);
-    $security_answer1 = mysqli_real_escape_string($conn, $_POST['security_answer1']);
-    $security_question2 = mysqli_real_escape_string($conn, $_POST['security_question2']);
-    $security_answer2 = mysqli_real_escape_string($conn, $_POST['security_answer2']);
-    $security_question3 = mysqli_real_escape_string($conn, $_POST['security_question3']);
-    $security_answer3 = mysqli_real_escape_string($conn, $_POST['security_answer3']);
-
-    // Save the form inputs to the session
-    $_SESSION['form_data'] = $_POST;
-    $_SESSION['form_data']['idno'] = $idno;
-
-    // Check for existing username and email in DB
-    $exist_username = mysqli_query($conn, "SELECT id FROM user WHERE `username` = '$username'");
-    $exist_email = mysqli_query($conn, "SELECT id FROM user WHERE `email` = '$email'");
-
-    if (mysqli_num_rows($exist_username) > 0) {
-        echo "<script>alert('Username already exists!');</script>";
-        echo "<script>location.href='registration.php'</script>";
-    } elseif (mysqli_num_rows($exist_email) > 0) {
-        echo "<script>alert('Email already exists!');</script>";
-        echo "<script>location.href='registration.php'</script>";
-    } else {
-        $suffixToUse = ($suffix === "others") ? $_POST["customSuffix"] : $suffix;
-
-        $sql = "INSERT INTO user (idno, firstname, middlename, lastname, suffix, birthdate, age, sex, email, username, country, purokstreet, brgy, municipal, province, password, zipcode, security_question1, security_answer1, security_question2, security_answer2, security_question3, security_answer3, role, status)   
-                VALUES ('$idno', '$firstname', '$middlename', '$lastname', '$suffixToUse', '$birthdate', '$age', '$sex', '$email', '$username', '$country', '$purokstreet', '$brgy', '$municipal', '$province', '$password', '$zipcode', '$security_question1', '$security_answer1', '$security_question2', '$security_answer2', '$security_question3', '$security_answer3', 'user', 'active')";
-
-        $result = mysqli_query($conn, $sql);
-
-        if ($result) {
-            unset($_SESSION['form_data']);
-            echo "<script>alert('You are Successfully Registered! Your ID No is: " . $idno . "');</script>";
-            echo "<script>location.href='login.php'</script>";
+    $suffixToUse = "";
+    if ($suffix === "others") {
+        if (empty($customSuffix)) {
+            $errors[] = "Please specify your custom suffix.";
+        } elseif (strlen($customSuffix) > 10) {
+            $errors[] = "Suffix cannot exceed 10 characters.";
+        } elseif (!preg_match('/^[a-zA-Z\s]+$/', $customSuffix)) {
+            $errors[] = "Suffix can only contain letters and spaces.";
         } else {
-            die(mysqli_error($conn));
+            $suffixToUse = strtoupper($customSuffix);
         }
+    } elseif (in_array($suffix, ["Jr", "Sr"])) {
+        $suffixToUse = $suffix;
+    }
+
+    // 2. Sex & Birthdate / Age
+    if (!in_array($sex, ["Male", "Female"])) {
+        $errors[] = "Please select a valid sex (Male or Female).";
+    }
+
+    $age = 0;
+    if (empty($birthdate) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $birthdate)) {
+        $errors[] = "A valid birthdate is required.";
+    } else {
+        $bdateObj = DateTime::createFromFormat('Y-m-d', $birthdate);
+        if (!$bdateObj || $bdateObj->format('Y-m-d') !== $birthdate) {
+            $errors[] = "Invalid birthdate format.";
+        } else {
+            $today = new DateTime();
+            $age = $today->diff($bdateObj)->y;
+            if ($age < 18) {
+                $errors[] = "You must be at least 18 years old to register.";
+            } elseif ($age > 120) {
+                $errors[] = "Please enter a valid birthdate.";
+            }
+        }
+    }
+
+    // 3. Address fields
+    if (empty($purokstreet)) {
+        $errors[] = "Purok/Street is required.";
+    } elseif (strlen($purokstreet) > 25) {
+        $errors[] = "Purok/Street cannot exceed 25 characters.";
+    } elseif (!preg_match('/^[a-zA-Z0-9\s\-]+$/', $purokstreet)) {
+        $errors[] = "Purok/Street can only contain letters, numbers, spaces, and hyphens.";
+    }
+
+    if (empty($brgy)) {
+        $errors[] = "Barangay is required.";
+    } elseif (strlen($brgy) < 3 || strlen($brgy) > 25) {
+        $errors[] = "Barangay must be between 3 and 25 characters.";
+    } elseif (!preg_match('/^[a-zA-Z0-9\s\-]+$/', $brgy)) {
+        $errors[] = "Barangay can only contain letters, numbers, spaces, and hyphens.";
+    }
+
+    if (empty($municipal)) {
+        $errors[] = "Municipality/City is required.";
+    } elseif (strlen($municipal) < 3 || strlen($municipal) > 25) {
+        $errors[] = "Municipality must be between 3 and 25 characters.";
+    } elseif (!preg_match('/^[a-zA-Z\s]+$/', $municipal)) {
+        $errors[] = "Municipality can only contain letters and spaces.";
+    }
+
+    if (empty($province)) {
+        $errors[] = "Province is required.";
+    } elseif (strlen($province) < 3 || strlen($province) > 25) {
+        $errors[] = "Province must be between 3 and 25 characters.";
+    } elseif (!preg_match('/^[a-zA-Z\s]+$/', $province)) {
+        $errors[] = "Province can only contain letters and spaces.";
+    }
+
+    if (empty($country)) {
+        $errors[] = "Country is required.";
+    } elseif (strlen($country) < 4 || strlen($country) > 40) {
+        $errors[] = "Country must be between 4 and 40 characters.";
+    } elseif (!preg_match('/^[a-zA-Z\s]+$/', $country)) {
+        $errors[] = "Country can only contain letters and spaces.";
+    }
+
+    if (empty($zipcode)) {
+        $errors[] = "Zip code is required.";
+    } elseif (!preg_match('/^[0-9]{4,6}$/', $zipcode)) {
+        $errors[] = "Zip code must be 4 to 6 numeric digits.";
+    }
+
+    // 4. Account Credentials
+    if (empty($email)) {
+        $errors[] = "Email address is required.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = "Please enter a valid email address.";
+    } else {
+        $email_domain = strtolower(substr(strrchr($email, "@"), 1));
+        $is_gmail = ($email_domain === 'gmail.com');
+        $is_university = (preg_match('/^[a-z0-9.-]+\.edu\.ph$/i', $email_domain) || preg_match('/^[a-z0-9.-]+\.edu$/i', $email_domain));
+        if (!$is_gmail && !$is_university) {
+            $errors[] = "Only Gmail (@gmail.com) and university email (@...edu.ph / @...edu) are allowed.";
+        }
+    }
+
+    if (empty($username)) {
+        $errors[] = "Username is required.";
+    } elseif (strlen($username) < 6 || strlen($username) > 15) {
+        $errors[] = "Username must be between 6 and 15 characters.";
+    } elseif (!preg_match('/^[a-z0-9@._]+$/', $username)) {
+        $errors[] = "Username must be lowercase and contain only letters, numbers, '@', '.', or '_'.";
+    }
+
+    if (empty($password)) {
+        $errors[] = "Password is required.";
+    } elseif (strlen($password) < 8 || strlen($password) > 15) {
+        $errors[] = "Password must be between 8 and 15 characters.";
+    } elseif (!preg_match('/[A-Z]/', $password) || !preg_match('/[0-9]/', $password) || !preg_match('/[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]/', $password)) {
+        $errors[] = "Password must contain at least one uppercase letter, one number, and one special character.";
+    }
+
+    if ($password !== $confirmPassword) {
+        $errors[] = "Passwords do not match.";
+    }
+
+    // 5. Security Questions & Answers
+    if (empty($security_question1) || empty($security_question2) || empty($security_question3)) {
+        $errors[] = "All 3 security questions must be selected.";
+    } elseif ($security_question1 === $security_question2 || $security_question1 === $security_question3 || $security_question2 === $security_question3) {
+        $errors[] = "Please choose 3 different security questions.";
+    }
+
+    if (empty($security_answer1) || empty($security_answer2) || empty($security_answer3)) {
+        $errors[] = "Answers are required for all 3 security questions.";
+    } elseif (strlen($security_answer1) < 2 || strlen($security_answer2) < 2 || strlen($security_answer3) < 2) {
+        $errors[] = "Each security answer must be at least 2 characters.";
+    }
+
+    // 6. Check unique username and email
+    if (empty($errors)) {
+        $stmt_u = mysqli_prepare($conn, "SELECT idno FROM user WHERE username = ? LIMIT 1");
+        mysqli_stmt_bind_param($stmt_u, "s", $username);
+        mysqli_stmt_execute($stmt_u);
+        if (mysqli_num_rows(mysqli_stmt_get_result($stmt_u)) > 0) {
+            $errors[] = "Username already exists! Please choose another.";
+        }
+        mysqli_stmt_close($stmt_u);
+
+        $stmt_e = mysqli_prepare($conn, "SELECT idno FROM user WHERE email = ? LIMIT 1");
+        mysqli_stmt_bind_param($stmt_e, "s", $email);
+        mysqli_stmt_execute($stmt_e);
+        if (mysqli_num_rows(mysqli_stmt_get_result($stmt_e)) > 0) {
+            $errors[] = "Email already exists! Please use a different email.";
+        }
+        mysqli_stmt_close($stmt_e);
+    }
+
+    // If validation fails, alert user and return to form
+    if (!empty($errors)) {
+        $errMsg = addslashes(implode("\\n• ", $errors));
+        echo "<script>alert('Registration Failed:\\n• " . $errMsg . "'); history.back();</script>";
+        exit();
+    }
+
+    // All validation passed: Hash password & security answers
+    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+    $ans1_hash = password_hash(strtolower($security_answer1), PASSWORD_DEFAULT);
+    $ans2_hash = password_hash(strtolower($security_answer2), PASSWORD_DEFAULT);
+    $ans3_hash = password_hash(strtolower($security_answer3), PASSWORD_DEFAULT);
+
+    $sql = "INSERT INTO user (idno, firstname, middlename, lastname, suffix, birthdate, age, sex, email, username, country, purokstreet, brgy, municipal, province, password, zipcode, security_question1, security_answer1, security_question2, security_answer2, security_question3, security_answer3, role, status)   
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'user', 'pending')";
+
+    $stmt_ins = mysqli_prepare($conn, $sql);
+    if ($stmt_ins) {
+        mysqli_stmt_bind_param(
+            $stmt_ins,
+            "ssssssissssssssssssssss",
+            $idno,
+            $firstname,
+            $middlename,
+            $lastname,
+            $suffixToUse,
+            $birthdate,
+            $age,
+            $sex,
+            $email,
+            $username,
+            $country,
+            $purokstreet,
+            $brgy,
+            $municipal,
+            $province,
+            $hashed_password,
+            $zipcode,
+            $security_question1,
+            $ans1_hash,
+            $security_question2,
+            $ans2_hash,
+            $security_question3,
+            $ans3_hash
+        );
+
+        if (mysqli_stmt_execute($stmt_ins)) {
+            unset($_SESSION['form_data']);
+            echo "<script>alert('You are successfully registered! Your ID No is: " . $idno . ". Your account is pending approval by the Super Admin.'); location.href='login.php';</script>";
+            exit();
+        } else {
+            $dbErr = addslashes(mysqli_error($conn));
+            echo "<script>alert('Database Error: " . $dbErr . "'); history.back();</script>";
+            exit();
+        }
+        mysqli_stmt_close($stmt_ins);
+    } else {
+        die("Database error: " . mysqli_error($conn));
     }
 }
 
 // Generate the next ID number for page display
 $auto_idno = generateNextIdNo($conn);
 if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno']) && preg_match('/^\d{4}-\d{4}$/', $_SESSION['form_data']['idno'])) {
-    $check_sess_id = mysqli_query($conn, "SELECT id FROM user WHERE idno = '" . mysqli_real_escape_string($conn, $_SESSION['form_data']['idno']) . "'");
+    $check_sess_id = mysqli_query($conn, "SELECT idno FROM user WHERE idno = '" . mysqli_real_escape_string($conn, $_SESSION['form_data']['idno']) . "'");
     if (mysqli_num_rows($check_sess_id) === 0) {
         $auto_idno = $_SESSION['form_data']['idno'];
     }
@@ -120,23 +333,27 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registration Form - MOTOPARTS</title>
+    <title>Crew Registration - ONE PIECE</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --accent-orange: #ff5500;
-            --accent-orange-hover: #ff6a1a;
-            --accent-orange-glow: rgba(255, 85, 0, 0.35);
-            --dark-bg: #0c0f14;
-            --card-bg: #12161f;
-            --input-bg: #151a24;
-            --input-border: rgba(255, 255, 255, 0.1);
-            --input-border-focus: #ff5500;
-            --text-main: #f8fafc;
-            --text-muted: #8492a6;
-            --text-label: #cbd5e1;
+            --accent-gold: #fbbf24;
+            --accent-gold-hover: #f59e0b;
+            --accent-gold-glow: rgba(245, 158, 11, 0.35);
+            --accent-red: #ef4444;
+            --accent-orange: #f97316;
+            --accent-orange-hover: #ea580c;
+            --accent-orange-glow: rgba(234, 88, 12, 0.35);
+            --dark-bg: #0b1120;
+            --card-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.08) 100%);
+            --input-bg: rgba(255, 255, 255, 0.15);
+            --input-border: rgba(255, 255, 255, 0.35);
+            --input-border-focus: #fbbf24;
+            --text-main: #ffffff;
+            --text-muted: #cbd5e1;
+            --text-label: #f1f5f9;
             --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             --font-heading: 'Outfit', sans-serif;
         }
@@ -159,8 +376,8 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             flex-direction: column;
             min-height: 100vh;
             background-image:
-                linear-gradient(rgba(12, 15, 20, 0.94), rgba(12, 15, 20, 0.96)),
-                url('../img/moto-bg.jpg');
+                linear-gradient(rgba(10, 15, 25, 0.20), rgba(10, 15, 25, 0.35)),
+                url('../img/one_piece_bg.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -168,13 +385,15 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
 
         /* Top Navbar */
         .navbar {
-            background: rgba(14, 18, 26, 0.95);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 0.85rem 2rem;
+            background: rgba(15, 23, 42, 0.50);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 0.55rem 2rem;
             position: sticky;
             top: 0;
             z-index: 100;
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.25);
         }
 
         .navdiv {
@@ -196,23 +415,32 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.4));
+            transition: transform 0.25s ease;
+        }
+
+        .logo-link:hover .logo-icon {
+            transform: scale(1.08) rotate(-3deg);
         }
 
         .logo-text {
             font-family: var(--font-heading);
-            font-size: 1.45rem;
-            letter-spacing: 0.5px;
+            font-size: 1.4rem;
+            letter-spacing: 1px;
             line-height: 1;
         }
 
-        .logo-text .moto {
+        .logo-text .op-one {
             font-weight: 900;
             color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
-        .logo-text .parts {
-            font-weight: 800;
-            color: var(--accent-orange);
+        .logo-text .op-piece {
+            font-weight: 900;
+            color: #fbbf24;
+            text-shadow: 0 0 14px rgba(245, 158, 11, 0.5);
+            margin-left: 3px;
         }
 
         .nav-actions {
@@ -225,43 +453,46 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             display: inline-flex;
             align-items: center;
             gap: 0.45rem;
-            padding: 0.5rem 1.25rem;
+            padding: 0.42rem 1.15rem;
             border-radius: 25px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: #e2e8f0;
-            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            color: #ffffff;
+            font-size: 0.84rem;
             font-weight: 600;
             text-decoration: none;
             transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(10px);
         }
 
         .btn-nav-home:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
-            border-color: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.25);
+            color: #fbbf24;
+            border-color: #fbbf24;
         }
 
         .btn-nav-login {
             display: inline-flex;
             align-items: center;
             gap: 0.45rem;
-            padding: 0.5rem 1.35rem;
+            padding: 0.42rem 1.25rem;
             border-radius: 25px;
-            background: linear-gradient(135deg, #ff5500 0%, #e64a00 100%);
+            background: linear-gradient(135deg, #ef4444 0%, #f59e0b 100%);
             color: #ffffff;
-            font-size: 0.9rem;
+            font-size: 0.84rem;
             font-weight: 700;
             text-decoration: none;
             border: none;
-            box-shadow: 0 4px 15px rgba(255, 85, 0, 0.35);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.35);
             transition: all 0.2s ease;
         }
 
         .btn-nav-login:hover {
-            background: linear-gradient(135deg, #ff661a 0%, #eb4d00 100%);
+            background: linear-gradient(135deg, #f87171 0%, #fbbf24 100%);
             transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(255, 85, 0, 0.5);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
+            color: #ffffff;
         }
 
         /* Form Wrapper & Content */
@@ -271,24 +502,24 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             justify-content: center;
             align-items: center;
             padding: 1rem 1.5rem;
-            overflow: hidden;
         }
 
         .form-card {
-            background: rgba(18, 22, 31, 0.92);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: var(--card-bg);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.35);
             border-radius: 16px;
             padding: 1.5rem 2.25rem;
             width: 100%;
             max-width: 900px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
             position: relative;
         }
 
-        /* Header block with orange vertical bar */
+        /* Header block with Straw Hat gradient bar */
         .form-header-row {
-            margin-bottom: 1rem;
+            margin-bottom: 0.95rem;
         }
 
         .form-title-group {
@@ -300,31 +531,33 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             display: flex;
             align-items: center;
             gap: 0.85rem;
-            margin-bottom: 0.35rem;
+            margin-bottom: 0.25rem;
         }
 
+        .pirate-bar,
         .orange-bar {
             width: 5px;
-            height: 32px;
-            background: var(--accent-orange);
+            height: 30px;
+            background: linear-gradient(180deg, #f59e0b 0%, #ef4444 100%);
             border-radius: 4px;
-            box-shadow: 0 0 10px rgba(255, 85, 0, 0.5);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
         }
 
         .form-title {
             font-family: var(--font-heading);
-            font-size: 1.75rem;
+            font-size: 1.65rem;
             font-weight: 800;
             color: #ffffff;
-            letter-spacing: -0.5px;
+            letter-spacing: 0.5px;
             line-height: 1.1;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
         }
 
         .form-subtitle {
-            color: var(--text-muted);
-            font-size: 0.88rem;
+            color: #cbd5e1;
+            font-size: 0.85rem;
             margin-left: calc(5px + 0.85rem);
-            font-weight: 400;
+            font-weight: 500;
         }
 
         /* Section divider header */
@@ -332,25 +565,26 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             display: flex;
             align-items: center;
             gap: 0.6rem;
-            margin: 0.6rem 0 0.85rem;
+            margin: 0.5rem 0 0.8rem;
             position: relative;
         }
 
         .section-bullet {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            background: var(--accent-orange);
-            box-shadow: 0 0 8px var(--accent-orange);
+            background: #f59e0b;
+            box-shadow: 0 0 8px #f59e0b;
             flex-shrink: 0;
         }
 
         .section-title-text {
             font-family: var(--font-heading);
-            font-size: 0.92rem;
+            font-size: 0.88rem;
             font-weight: 800;
             letter-spacing: 1.5px;
-            color: #ffffff;
+            color: #fbbf24;
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
             text-transform: uppercase;
             white-space: nowrap;
         }
@@ -358,7 +592,7 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
         .section-line {
             flex: 1;
             height: 1px;
-            background: repeating-linear-gradient(to right, rgba(255, 255, 255, 0.15) 0, rgba(255, 255, 255, 0.15) 4px, transparent 4px, transparent 8px);
+            background: repeating-linear-gradient(to right, rgba(245, 158, 11, 0.4) 0, rgba(245, 158, 11, 0.4) 4px, transparent 4px, transparent 8px);
         }
 
         /* Input Grid */
@@ -388,21 +622,22 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             gap: 0.35rem;
             font-size: 0.73rem;
             font-weight: 700;
-            color: var(--text-label);
+            color: #f1f5f9;
             text-transform: uppercase;
             letter-spacing: 0.6px;
             margin-bottom: 0.3rem;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
         }
 
         .req-star {
-            color: var(--accent-orange);
+            color: #ef4444;
             font-weight: 800;
         }
 
         .label-hint {
             font-size: 0.72rem;
             font-weight: 500;
-            color: var(--text-muted);
+            color: #cbd5e1;
             text-transform: none;
             letter-spacing: normal;
         }
@@ -412,38 +647,43 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
         select.input-control {
             width: 100%;
             height: 40px;
-            background: var(--input-bg);
-            border: 1px solid var(--input-border);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1.5px solid rgba(255, 255, 255, 0.35);
             border-radius: 8px;
             padding: 0 0.9rem;
-            color: #f8fafc;
+            color: #ffffff;
             font-family: var(--font-main);
             font-size: 0.9rem;
+            font-weight: 600;
             transition: all 0.2s ease;
             box-sizing: border-box;
             outline: none;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
         }
 
         .input-control::placeholder {
-            color: #475569;
+            color: #cbd5e1;
             font-weight: 400;
         }
 
         .input-control:focus,
         select.input-control:focus {
-            border-color: var(--input-border-focus);
-            box-shadow: 0 0 0 3px var(--accent-orange-glow);
-            background: #181f2c;
+            border-color: #fbbf24;
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
+            background: rgba(255, 255, 255, 0.25);
+            color: #ffffff;
         }
 
         /* Readonly ID NO & Age */
         .input-idno {
-            color: #ff9900 !important;
+            color: #38bdf8 !important;
             font-weight: 800 !important;
             letter-spacing: 1px;
-            background: #0f131a !important;
+            background: rgba(255, 255, 255, 0.08) !important;
             cursor: not-allowed;
-            border-color: rgba(255, 153, 0, 0.25) !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
         }
 
         .age-input-wrapper {
@@ -454,10 +694,11 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
 
         .age-input-wrapper .input-control {
             padding-right: 3.5rem;
-            background: #0f131a !important;
+            background: rgba(255, 255, 255, 0.08) !important;
             cursor: not-allowed;
-            color: #cbd5e1;
+            color: #ffffff;
             font-weight: 600;
+            border-color: rgba(255, 255, 255, 0.2) !important;
         }
 
         .age-unit-suffix {
@@ -465,7 +706,7 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             right: 1rem;
             font-size: 0.82rem;
             font-weight: 800;
-            color: var(--text-muted);
+            color: #cbd5e1;
             letter-spacing: 1px;
             pointer-events: none;
         }
@@ -475,7 +716,7 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             appearance: none;
             -webkit-appearance: none;
             -moz-appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238492a6' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cbd5e1' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
             background-repeat: no-repeat;
             background-position: right 1rem center;
             background-size: 15px;
@@ -484,20 +725,20 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
         }
 
         select.input-control option {
-            background-color: #12161f;
+            background-color: #0f172a;
             color: #ffffff;
             padding: 0.5rem;
         }
 
         /* Date input icon */
         input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(0.7);
+            filter: invert(1);
             cursor: pointer;
         }
 
         /* Under-field Real-Time Error Message */
         .error-msg {
-            color: #ff4d4d;
+            color: #f87171;
             font-size: 0.76rem;
             font-weight: 600;
             display: none;
@@ -513,8 +754,8 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
 
         .input-error-highlight {
             border-color: #ef4444 !important;
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.35) !important;
-            background: rgba(45, 15, 20, 0.7) !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25) !important;
+            background: rgba(239, 68, 68, 0.15) !important;
         }
 
         /* Step Action Buttons */
@@ -528,7 +769,7 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
         .btn-step-submit {
             flex: 1;
             height: 42px;
-            background: linear-gradient(135deg, #ff5500 0%, #e04400 100%);
+            background: linear-gradient(135deg, #ef4444 0%, #f59e0b 100%);
             color: #ffffff;
             border: none;
             border-radius: 8px;
@@ -541,23 +782,23 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            box-shadow: 0 6px 20px rgba(255, 85, 0, 0.35);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
             transition: all 0.25s ease;
         }
 
         .btn-step-next:hover,
         .btn-step-submit:hover {
-            background: linear-gradient(135deg, #ff661a 0%, #eb4d00 100%);
+            background: linear-gradient(135deg, #f87171 0%, #fbbf24 100%);
             transform: translateY(-1px);
-            box-shadow: 0 8px 25px rgba(255, 85, 0, 0.5);
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.45);
         }
 
         .btn-step-back {
             width: 120px;
             height: 42px;
-            background: rgba(255, 255, 255, 0.06);
-            color: #cbd5e1;
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 8px;
             font-family: var(--font-main);
             font-size: 0.9rem;
@@ -568,23 +809,24 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             justify-content: center;
             gap: 0.4rem;
             transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
         }
 
         .btn-step-back:hover {
-            background: rgba(255, 255, 255, 0.12);
-            color: #ffffff;
-            border-color: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.22);
+            color: #fbbf24;
+            border-color: #fbbf24;
         }
 
         .auth-footer-link {
             text-align: center;
             margin-top: 0.75rem;
             font-size: 0.85rem;
-            color: var(--text-muted);
+            color: #cbd5e1;
         }
 
         .auth-footer-link a {
-            color: var(--accent-orange);
+            color: #fbbf24;
             text-decoration: none;
             font-weight: 700;
             margin-left: 0.3rem;
@@ -592,28 +834,30 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
         }
 
         .auth-footer-link a:hover {
-            color: #ff7733;
+            color: #fde047;
             text-decoration: underline;
         }
 
         /* Footer */
         footer {
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
             padding: 1.5rem;
             text-align: center;
-            color: #64748b;
+            color: rgba(255, 255, 255, 0.7);
             font-size: 0.88rem;
             margin-top: auto;
+            background: rgba(15, 23, 42, 0.35);
+            backdrop-filter: blur(15px);
         }
 
         footer a {
-            color: #64748b;
+            color: #fbbf24;
             text-decoration: none;
             transition: color 0.2s ease;
         }
 
         footer a:hover {
-            color: var(--accent-orange);
+            color: #fde047;
         }
 
         @media (max-width: 768px) {
@@ -640,20 +884,42 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
 </head>
 
 <body>
-    <!-- Top Navbar -->
+    <!-- Top Navbar with Straw Hat Jolly Roger -->
     <nav class="navbar">
         <div class="navdiv">
             <a href="homepage.php" class="logo-link">
                 <div class="logo-icon">
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff5500" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="18.5" cy="17.5" r="3.5"/>
-                        <circle cx="5.5" cy="17.5" r="3.5"/>
-                        <circle cx="15" cy="5" r="1"/>
-                        <path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
+                    <svg width="30" height="30" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Crossed Bones -->
+                        <path d="M14 14 L50 50 M50 14 L14 50" stroke="#e2e8f0" stroke-width="5" stroke-linecap="round"/>
+                        <circle cx="12" cy="12" r="3.5" fill="#cbd5e1"/>
+                        <circle cx="12" cy="16" r="3.5" fill="#cbd5e1"/>
+                        <circle cx="52" cy="12" r="3.5" fill="#cbd5e1"/>
+                        <circle cx="52" cy="16" r="3.5" fill="#cbd5e1"/>
+                        <circle cx="12" cy="48" r="3.5" fill="#cbd5e1"/>
+                        <circle cx="12" cy="52" r="3.5" fill="#cbd5e1"/>
+                        <circle cx="52" cy="48" r="3.5" fill="#cbd5e1"/>
+                        <circle cx="52" cy="52" r="3.5" fill="#cbd5e1"/>
+                        <!-- Skull Base -->
+                        <circle cx="32" cy="34" r="14" fill="#f8fafc"/>
+                        <rect x="26" y="42" width="12" height="7" rx="2" fill="#f8fafc"/>
+                        <!-- Eye Sockets -->
+                        <circle cx="27.5" cy="35" r="3.2" fill="#0f172a"/>
+                        <circle cx="36.5" cy="35" r="3.2" fill="#0f172a"/>
+                        <!-- Teeth Lines -->
+                        <line x1="28.5" y1="44" x2="28.5" y2="48" stroke="#0f172a" stroke-width="1.3"/>
+                        <line x1="32" y1="44" x2="32" y2="48" stroke="#0f172a" stroke-width="1.3"/>
+                        <line x1="35.5" y1="44" x2="35.5" y2="48" stroke="#0f172a" stroke-width="1.3"/>
+                        <!-- Straw Hat Crown -->
+                        <ellipse cx="32" cy="24" rx="12" ry="7.5" fill="#f59e0b"/>
+                        <!-- Red Ribbon -->
+                        <ellipse cx="32" cy="27" rx="12.2" ry="3" fill="#ef4444"/>
+                        <!-- Straw Hat Brim -->
+                        <ellipse cx="32" cy="28" rx="22" ry="5" fill="#f59e0b"/>
                     </svg>
                 </div>
                 <div class="logo-text">
-                    <span class="moto">MOTO</span><span class="parts">PARTS</span>
+                    <span class="op-one">ONE</span><span class="op-piece">PIECE</span>
                 </div>
             </a>
             <div class="nav-actions">
@@ -670,7 +936,7 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
                         <polyline points="10 17 15 12 10 7"></polyline>
                         <line x1="15" y1="12" x2="3" y2="12"></line>
                     </svg>
-                    Login
+                    Log In
                 </a>
             </div>
         </div>
@@ -684,10 +950,10 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             <div class="form-header-row">
                 <div class="form-title-group">
                     <div class="title-with-bar">
-                        <span class="orange-bar"></span>
-                        <h1 class="form-title">Registration form</h1>
+                        <span class="pirate-bar"></span>
+                        <h1 class="form-title">CREW REGISTRATION</h1>
                     </div>
-                    <p class="form-subtitle">New rider paperwork — takes about 2 minutes</p>
+                    <p class="form-subtitle">Join the Straw Hat Pirates — crew paperwork before setting sail</p>
                 </div>
             </div>
 
@@ -917,7 +1183,7 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
                                 Email Address <span class="req-star">*</span>
                             </label>
                             <input type="email" name="email" id="email" class="input-control"
-                                placeholder="yourname@domain.com"
+                                placeholder="name@gmail.com or name@csucc.edu.ph"
                                 value="<?php echo isset($_SESSION['form_data']['email']) ? htmlspecialchars($_SESSION['form_data']['email']) : ''; ?>">
                             <small class="error-msg" id="email_error"></small>
                         </div>
@@ -937,11 +1203,25 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
                             <label class="form-label" for="password">
                                 Password <span class="req-star">*</span>
                             </label>
-                            <input type="password" name="password" id="password" class="input-control"
-                                placeholder="••••••••"
-                                value="<?php echo isset($_SESSION['form_data']['password']) ? htmlspecialchars($_SESSION['form_data']['password']) : ''; ?>"
-                                onkeyup="strongpassword(this.value)">
-                            <div id="pswrd" class="error" style="height: 18px; font-size: 0.8rem; margin-top: 3px;"></div>
+                            <div class="input-with-icon-wrap" style="position: relative; display: flex; align-items: center;">
+                                <input type="password" name="password" id="password" class="input-control"
+                                    placeholder="••••••••"
+                                    value="<?php echo isset($_SESSION['form_data']['password']) ? htmlspecialchars($_SESSION['form_data']['password']) : ''; ?>"
+                                    onkeyup="strongpassword(this.value)" style="padding-right: 2.75rem;">
+                                <button type="button" class="password-toggle-btn" id="toggleRegPass" title="Toggle password visibility" style="position: absolute; right: 0.75rem; background: none; border: none; color: #8492a6; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0.3rem;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
+                            </div>
+                            <!-- Password Strength Bar -->
+                            <div class="strength-meter-wrap" style="margin-top: 6px; margin-bottom: 6px;">
+                                <div class="strength-bars" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; height: 5px;">
+                                    <div class="strength-bar" id="bar1" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
+                                    <div class="strength-bar" id="bar2" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
+                                    <div class="strength-bar" id="bar3" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
+                                    <div class="strength-bar" id="bar4" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
+                                </div>
+                            </div>
+                            <div id="pswrd" style="display: none;"></div>
                             <small class="error-msg" id="password_error"></small>
                         </div>
 
@@ -949,9 +1229,14 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
                             <label class="form-label" for="confirmPassword">
                                 Confirm Password <span class="req-star">*</span>
                             </label>
-                            <input type="password" name="confirmPassword" id="confirmPassword" class="input-control"
-                                placeholder="••••••••"
-                                value="<?php echo isset($_SESSION['form_data']['confirmPassword']) ? htmlspecialchars($_SESSION['form_data']['confirmPassword']) : ''; ?>">
+                            <div class="input-with-icon-wrap" style="position: relative; display: flex; align-items: center;">
+                                <input type="password" name="confirmPassword" id="confirmPassword" class="input-control"
+                                    placeholder="••••••••"
+                                    value="<?php echo isset($_SESSION['form_data']['confirmPassword']) ? htmlspecialchars($_SESSION['form_data']['confirmPassword']) : ''; ?>" style="padding-right: 2.75rem;">
+                                <button type="button" class="password-toggle-btn" id="toggleRegConfirmPass" title="Toggle password visibility" style="position: absolute; right: 0.75rem; background: none; border: none; color: #8492a6; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0.3rem;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
+                            </div>
                             <small class="error-msg" id="confirmPassword_error"></small>
                         </div>
                     </div>
@@ -1039,8 +1324,8 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
 
     <!-- Footer -->
     <footer>
-        <p>&copy; 2024 Moto Shop. All rights reserved.</p>
-        <p style="margin-top: 0.35rem;"><a href="#">Privacy Policy</a></p>
+        <p>&copy; 2024 ONE PIECE System. All rights reserved.</p>
+        <p style="margin-top: 0.25rem;"><a href="#">Grand Line Privacy Policy</a></p>
     </footer>
 
     <script>

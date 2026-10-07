@@ -4,7 +4,11 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'superadmin') {
     header("Location: ../login.php");
     exit();
 }
-include("../db.php");
+require_once __DIR__ . '/../db.php';
+
+// Guard: Require profile completion before accessing features
+require_once __DIR__ . '/../includes/auth_guard.php';
+enforce_profile_completion($conn);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -12,13 +16,13 @@ include("../db.php");
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Block List - Super Admin</title>
+    <title>Block List - ONE PIECE Super Admin</title>
     <link rel="stylesheet" href="../../css/style.css">
     <style>
         body {
             background-image:
-                linear-gradient(rgba(10, 12, 18, 0.88), rgba(10, 12, 18, 0.92)),
-                url('../../img/moto-bg.jpg');
+                linear-gradient(rgba(240, 245, 255, 0.65), rgba(248, 250, 252, 0.80)),
+                url('../../img/one_piece_bg.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -31,30 +35,30 @@ include("../db.php");
         .search-container input {
             width: 100%;
             padding: 1rem 1.5rem;
-            background: rgba(20, 30, 45, 0.6);
-            border: 2px solid rgba(255, 255, 255, 0.08);
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
             border-radius: 12px;
-            color: var(--text-color);
+            color: #0f172a;
             font-size: 1rem;
             backdrop-filter: blur(12px);
             transition: all 0.3s ease;
         }
 
         .search-container input:focus {
-            border-color: rgba(79, 172, 254, 0.6);
+            border-color: #f59e0b;
             outline: none;
-            box-shadow: 0 0 15px rgba(79, 172, 254, 0.2);
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
         }
 
         .table-container {
             width: 100%;
             margin-top: 1rem;
-            background: rgba(20, 30, 45, 0.6);
+            background: rgba(255, 255, 255, 0.94);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.32);
             border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
         }
 
         .table-wrapper {
@@ -67,22 +71,22 @@ include("../db.php");
         }
 
         th {
-            background: rgba(0, 0, 0, 0.3);
-            color: var(--accent-blue);
-            font-weight: 700;
+            background: linear-gradient(135deg, rgba(254, 243, 199, 0.75), rgba(254, 215, 170, 0.6));
+            color: #78350f;
+            font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 1px;
             font-size: 0.8rem;
-            padding: 1rem;
+            padding: 1.1rem 1.25rem;
             text-align: left;
-            border-bottom: 2px solid rgba(79, 172, 254, 0.2);
+            border-bottom: 2px solid rgba(245, 158, 11, 0.4);
         }
 
         td {
-            padding: 0.8rem 1rem;
-            color: var(--text-color);
+            padding: 0.95rem 1.25rem;
+            color: #1e293b;
             text-align: left;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.9);
             font-size: 0.9rem;
             white-space: nowrap;
             overflow: hidden;
@@ -90,11 +94,11 @@ include("../db.php");
         }
 
         tr:nth-child(even) {
-            background: rgba(255, 255, 255, 0.02);
+            background: rgba(248, 250, 252, 0.6);
         }
 
         tr:hover {
-            background: rgba(79, 172, 254, 0.08);
+            background: rgba(254, 243, 199, 0.35);
         }
 
         .action-buttons {
@@ -358,31 +362,14 @@ include("../db.php");
 </head>
 
 <body>
-    <nav class="navbar">
-        <div class="navdiv">
-            <div class="logo">
-                <a href="dashboard.php" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff5500" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="18.5" cy="17.5" r="3.5"/>
-                        <circle cx="5.5" cy="17.5" r="3.5"/>
-                        <circle cx="15" cy="5" r="1"/>
-                        <path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
-                    </svg>
-                    <span style="font-weight: 800; color: #ffffff; letter-spacing: 0.5px;">SUPER <span style="color: var(--accent-orange, #ff5500);">ADMIN</span></span>
-                </a>
-            </div>
-            <ul>
-                <li><a href="dashboard.php">Dashboard</a></li>
-                <li><a href="manage_admins.php">Manage Admins</a></li>
-                <li><a href="manage_users.php">Manage Users</a></li>
-                <li><a href="block_list.php" style="color: var(--accent-blue);">Block List</a></li>
-                <li><a href="audit_logs.php">Audit Logs</a></li>
-                <button onclick="location.href='../logout.php'">Logout</button>
-            </ul>
-        </div>
-    </nav>
+    <div class="app-layout">
+        <?php
+        include_once __DIR__ . '/../includes/sidebar.php';
+        render_sidebar('block_list');
+        ?>
 
-    <div class="container">
+        <div class="app-main">
+            <main class="main-content">
         <h1>Block List</h1>
         <p>View all blocked accounts and manage their status.</p>
 
@@ -397,7 +384,6 @@ include("../db.php");
                 <table id="blockListTable">
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>ID No</th>
                             <th>Name</th>
                             <th>Username</th>
@@ -408,7 +394,7 @@ include("../db.php");
                     </thead>
                     <tbody id="blockListTableBody">
                         <tr>
-                            <td colspan="7" style="text-align: center;">Loading blocked admins...</td>
+                            <td colspan="6" style="text-align: center;">Loading blocked admins...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -421,7 +407,6 @@ include("../db.php");
                 <table id="blockListUsersTable">
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>ID No</th>
                             <th>Name</th>
                             <th>Username</th>
@@ -432,7 +417,7 @@ include("../db.php");
                     </thead>
                     <tbody id="blockListUsersTableBody">
                         <tr>
-                            <td colspan="7" style="text-align: center;">Loading blocked users...</td>
+                            <td colspan="6" style="text-align: center;">Loading blocked users...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -483,7 +468,7 @@ include("../db.php");
             if (users.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7">
+                        <td colspan="6">
                             <div class="empty-state">
                                 <div class="icon">✅</div>
                                 <p>${emptyMessage}</p>
@@ -495,7 +480,6 @@ include("../db.php");
 
             tbody.innerHTML = users.map(user => `
                 <tr data-search="${(user.firstname + ' ' + user.lastname + ' ' + user.username + ' ' + user.email).toLowerCase()}">
-                    <td>${user.id}</td>
                     <td>${user.idno}</td>
                     <td>${user.firstname} ${user.lastname}</td>
                     <td>${user.username}</td>
@@ -503,8 +487,8 @@ include("../db.php");
                     <td class="status-blocked">Blocked</td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn-action btn-view" onclick="viewUser(${user.id})">View</button>
-                            <button class="btn-action btn-unblock" onclick="unblockUser(${user.id})">Unblock</button>
+                            <button class="btn-action btn-view" onclick="viewUser('${user.idno}')">View</button>
+                            <button class="btn-action btn-unblock" onclick="unblockUser('${user.idno}')">Unblock</button>
                         </div>
                     </td>
                 </tr>
@@ -584,6 +568,28 @@ include("../db.php");
                 </div>
             `).join('');
 
+            if (user.block_reason) {
+                html += `
+                    <div class="detail-item" style="grid-column: 1 / -1; margin-top: 0.5rem; background: rgba(239, 68, 68, 0.08); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);">
+                        <span class="detail-label" style="color: #f87171;">Block Reason</span>
+                        <span class="detail-value" style="color: #fca5a5; white-space: pre-wrap; margin-top: 0.25rem;">${escapeHtml(user.block_reason)}</span>
+                    </div>
+                `;
+            }
+
+            if (user.block_file) {
+                html += `
+                    <div class="detail-item" style="grid-column: 1 / -1; margin-top: 0.5rem; background: rgba(59, 130, 246, 0.08); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                        <span class="detail-label" style="color: #60a5fa;">Attached Supporting File</span>
+                        <div style="margin-top: 0.35rem;">
+                            <a href="../../uploads/${encodeURIComponent(user.block_file)}" target="_blank" download style="display: inline-flex; align-items: center; gap: 0.4rem; color: #93c5fd; text-decoration: underline; font-size: 0.9rem;">
+                                <span>&#128190;</span> Download / View File (${escapeHtml(user.block_file)})
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }
+
             if ((user.role === 'admin' || user.role === 'superadmin') && user.privileges) {
                 try {
                     const privileges = JSON.parse(user.privileges);
@@ -592,9 +598,12 @@ include("../db.php");
                             'view_user_logs': 'View User Logs',
                             'view_admin_logs': 'View Admin Logs',
                             'view_users': 'View All Users',
+                            'create_users': 'Create Users',
                             'block_users': 'Block/Unblock Users',
                             'delete_users': 'Delete Users',
-                            'edit_users': 'Edit Users'
+                            'edit_users': 'Edit Users',
+                            'view_audit_logs': 'View Audit Logs',
+                            'approve_users': 'Approve Users'
                         };
 
                         const privList = privileges.map(p => `<li>${privilegeNames[p] || p}</li>`).join('');
@@ -613,6 +622,11 @@ include("../db.php");
             }
 
             modalBody.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
         function closeLargeModal(modalId) {
@@ -638,6 +652,9 @@ include("../db.php");
             }, 3000);
         }
     </script>
+</main>
+</div>
+</div>
 </body>
 
-</html>
+</html>

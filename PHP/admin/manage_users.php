@@ -4,11 +4,15 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../login.php");
     exit();
 }
-include("../db.php");
+require_once __DIR__ . '/../db.php';
+
+// Guard: Require profile completion before accessing features
+require_once __DIR__ . '/../includes/auth_guard.php';
+enforce_profile_completion($conn);
 
 // Fetch the current admin's privileges
-$current_admin_id = $_SESSION['user_id'];
-$priv_query = mysqli_query($conn, "SELECT privileges FROM user WHERE id = $current_admin_id");
+$current_admin_id = mysqli_real_escape_string($conn, $_SESSION['user_id'] ?? '');
+$priv_query = mysqli_query($conn, "SELECT privileges FROM user WHERE idno = '$current_admin_id'");
 $priv_data = mysqli_fetch_assoc($priv_query);
 $privileges_json = $priv_data['privileges'] ?? '[]';
 $privileges = json_decode($privileges_json, true) ?? [];
@@ -17,8 +21,8 @@ $can_delete_users = in_array('delete_users', $privileges);
 $can_view_users = in_array('view_users', $privileges);
 $can_block = in_array('block_users', $privileges);
 $can_edit = in_array('edit_users', $privileges);
-$can_view_user_logs = in_array('view_user_logs', $privileges);
-$can_view_admin_logs = in_array('view_admin_logs', $privileges);
+$can_create_users = in_array('create_users', $privileges);
+$can_approve = in_array('approve_users', $privileges);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,1039 +30,1373 @@ $can_view_admin_logs = in_array('view_admin_logs', $privileges);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Users - Admin</title>
+    <title>User Management - ONE PIECE Admin</title>
     <link rel="stylesheet" href="../../css/style.css">
     <style>
         body {
             background-image:
-                linear-gradient(rgba(10, 12, 18, 0.88), rgba(10, 12, 18, 0.92)),
-                url('../../img/moto-bg.jpg');
+                linear-gradient(rgba(240, 245, 255, 0.65), rgba(248, 250, 252, 0.80)),
+                url('../../img/one_piece_bg.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
         }
 
-        /* Logout Modal Styles */
-        .modal-overlay {
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+        }
+
+        .filter-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 0 15px rgba(245, 158, 11, 0.1);
+        }
+
+        .search-input-wrapper {
+            flex: 1;
+            min-width: 260px;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input-wrapper svg {
+            position: absolute;
+            left: 1rem;
+            width: 18px;
+            height: 18px;
+            stroke: #94a3b8;
+            pointer-events: none;
+        }
+
+        .search-input-wrapper input {
+            width: 100%;
+            padding: 0.8rem 1rem 0.8rem 2.8rem;
+            border-radius: 10px;
+            border: 1.5px solid #cbd5e1;
+            background: #ffffff;
+            color: #0f172a;
+            font-size: 0.92rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-input-wrapper input:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+        }
+
+        .filter-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-size: 0.8rem;
+            color: #475569;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group select {
+            padding: 0.7rem 1rem;
+            border-radius: 10px;
+            border: 1.5px solid #cbd5e1;
+            background: #ffffff;
+            color: #0f172a;
+            font-size: 0.86rem;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .filter-group select:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+        }
+
+        .filter-group select option {
+            background: #ffffff;
+            color: #0f172a;
+        }
+
+        .btn-create-user {
+            padding: 0.75rem 1.4rem;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #ff5500, #e04400);
+            color: #ffffff;
+            border: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(255, 85, 0, 0.35);
+            transition: all 0.25s ease;
+        }
+
+        .btn-create-user:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, #ff661a, #eb4d00);
+            box-shadow: 0 6px 20px rgba(255, 85, 0, 0.5);
+        }
+
+        /* Table */
+        .table-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            border-radius: 14px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 0 15px rgba(245, 158, 11, 0.1);
+        }
+
+        .styled-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .styled-table th {
+            background: rgba(254, 243, 199, 0.75) !important;
+            padding: 0.9rem 1rem;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #78350f !important;
+            font-weight: 800;
+            border-top: 3px solid #f59e0b;
+            border-bottom: 2px solid #fde68a;
+        }
+
+        .styled-table td {
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+            color: #0f172a;
+        }
+
+        .styled-table tr:hover {
+            background: rgba(254, 243, 199, 0.3);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-role-user { background: rgba(2, 132, 199, 0.15); color: #0284c7; border: 1px solid rgba(2, 132, 199, 0.35); }
+        .badge-status-active { background: rgba(34, 197, 94, 0.15); color: #15803d; border: 1px solid rgba(34, 197, 94, 0.35); }
+        .badge-status-blocked { background: rgba(239, 68, 68, 0.15); color: #b91c1c; border: 1px solid rgba(239, 68, 68, 0.35); }
+        .badge-status-inactive { background: rgba(148, 163, 184, 0.2); color: #475569; border: 1px solid rgba(148, 163, 184, 0.35); }
+
+        .action-btn-group {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+        }
+
+        .btn-action {
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .btn-view { background: #f1f5f9; color: #0284c7; border-color: #cbd5e1; }
+        .btn-view:hover { background: #e0f2fe; }
+        .btn-edit { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
+        .btn-edit:hover { background: #fde68a; }
+        .btn-block { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+        .btn-block:hover { background: #fecaca; }
+        .btn-unblock { background: #dcfce7; color: #15803d; border-color: #86efac; }
+        .btn-unblock:hover { background: #bbf7d0; }
+        .btn-delete { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+        .btn-delete:hover { background: #fecaca; }
+
+        .action-select {
+            background: #ffffff;
+            color: #0f172a;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+            min-width: 105px;
+        }
+
+        .action-select:hover {
+            border-color: #f59e0b;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+            background: #ffffff;
+        }
+
+        .action-select:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+        }
+
+        .action-select option {
+            background: #ffffff;
+            color: #0f172a;
+            padding: 0.4rem;
+        }
+
+        .action-select option.opt-delete {
+            color: #dc2626;
+        }
+
+        /* Modal */
+        .app-modal-overlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            z-index: 1000;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(6px);
+            z-index: 2000;
             justify-content: center;
             align-items: center;
+            padding: 1.5rem;
             animation: fadeIn 0.2s ease;
         }
 
-        .modal-overlay.active {
+        .app-modal-overlay.active {
             display: flex;
         }
 
-        .modal-content-logout {
-            background: linear-gradient(135deg, rgba(30, 30, 40, 0.95), rgba(20, 20, 30, 0.98));
-            padding: 2rem 2.5rem;
+        .app-modal-card {
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid rgba(245, 158, 11, 0.35);
             border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            text-align: center;
-            max-width: 400px;
-            animation: slideUp 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            max-width: 520px;
+            width: 100%;
+            padding: 2rem;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+            color: #0f172a;
         }
 
-        .modal-content-logout h3 {
-            margin-bottom: 0.5rem;
+        .modal-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .modal-title-row h3 {
+            font-size: 1.35rem;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        .btn-modal-close {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
             font-size: 1.5rem;
-            color: var(--text-color);
+            cursor: pointer;
+            line-height: 1;
         }
 
-        .modal-content-logout p {
-            color: var(--text-muted);
+        .form-group-modal {
+            margin-bottom: 1.1rem;
+            text-align: left;
+        }
+
+        .form-group-modal label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #cbd5e1;
+            margin-bottom: 0.35rem;
+        }
+
+        .form-control-modal {
+            width: 100%;
+            padding: 0.75rem 0.9rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(10, 14, 22, 0.85);
+            color: #f8fafc;
+            font-size: 0.9rem;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .form-control-modal:focus {
+            border-color: #3b82f6;
+        }
+
+        /* Real-time Field Error Messages */
+        .error-msg {
+            color: #ff4d4d;
+            font-size: 0.76rem;
+            font-weight: 600;
+            display: none;
+            margin-top: 5px;
+            line-height: 1.2;
+            animation: fadeInMsg 0.2s ease;
+        }
+
+        @keyframes fadeInMsg {
+            from { opacity: 0; transform: translateY(-2px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-error-highlight {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.35) !important;
+            background: rgba(45, 15, 20, 0.7) !important;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
             margin-bottom: 1.5rem;
         }
 
-        .modal-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .modal-buttons-logout {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-        }
-
-        .modal-btn {
-            padding: 0.75rem 2rem;
-            border: none;
+        .details-cell {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
+            padding: 0.75rem;
+        }
+
+        .details-cell .label {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+
+        .details-cell .value {
+            font-size: 0.95rem;
+            color: #ffffff;
             font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .modal-btn-cancel {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-color);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .modal-btn-cancel:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .modal-btn-confirm {
-            background: linear-gradient(135deg, var(--accent-blue), #4facfe);
-            color: white;
-        }
-
-        .modal-btn-confirm:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 20px rgba(79, 172, 254, 0.4);
+            margin-top: 0.25rem;
         }
 
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
-
-        @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        /* Professional Theme */
-        h1 {
-            font-size: 2.8rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.5px;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-        }
-
-        .info-box {
-            background: rgba(20, 30, 45, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-left: 4px solid var(--accent-blue);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            color: white;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .info-box strong,
-        .info-box p {
-            color: white !important;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
-        }
-
-        .search-container {
-            margin-bottom: 1.5rem;
-        }
-
-        .search-container input {
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(20, 30, 45, 0.6);
-            backdrop-filter: blur(12px);
-            color: var(--text-color);
-            width: 100%;
-            max-width: 500px;
-            font-size: 1rem;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
-        }
-
-        .search-container input:focus {
-            border-color: rgba(79, 172, 254, 0.6);
-            outline: none;
-            box-shadow: 0 0 15px rgba(79, 172, 254, 0.2);
-        }
-
-        .table-container {
-            overflow-x: auto;
-            margin-top: 1rem;
-            background: rgba(20, 30, 45, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 1.5rem;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            margin-bottom: 2rem;
-        }
-
-        .table-wrapper {
-            background: transparent;
-            border-radius: 10px;
-            position: relative;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            color: var(--text-color);
-        }
-
-        th {
-            background: rgba(0, 0, 0, 0.8);
-            font-weight: 700;
-            color: white !important;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 4px solid #050505 !important;
-        }
-
-        /* Colored headers for Professional theme */
-        th {
-            border-top: 4px solid var(--accent-blue) !important;
-        }
-
-        th,
-        td {
-            padding: 1.2rem;
-            text-align: left;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        tr:nth-child(even) {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        tr:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .btn-action {
-            padding: 0.4rem 0.8rem;
-            border: 1px solid transparent;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin: 0.2rem;
-            transition: all 0.2s ease;
-        }
-
-        .btn-view {
-            background-color: var(--accent-blue);
-            color: white;
-        }
-
-        .btn-edit {
-            background-color: var(--accent-orange);
-            color: white;
-        }
-
-        .btn-block {
-            background-color: var(--accent-red);
-            color: white;
-        }
-
-        .btn-unblock {
-            background-color: var(--accent-green);
-            color: white;
-        }
-
-        .btn-delete {
-            background-color: #ff1a1a;
-            color: white;
-        }
-
-        .btn-action:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.5);
-            filter: brightness(1.1);
-        }
-
-        .btn-action:active {
-            transform: translateY(1px);
-        }
-
-        .status-active {
-            color: var(--accent-green);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            text-shadow: 0 0 10px rgba(40, 167, 69, 0.4);
-        }
-
-        .status-blocked {
-            color: var(--accent-red);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            text-shadow: 0 0 10px rgba(255, 59, 59, 0.4);
-        }
-
-        .status-inactive {
-            color: #6c757d;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            text-shadow: 0 0 10px rgba(108, 117, 125, 0.4);
-        }
-
-        .status-inactive {
-            color: #888;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 1rem 2rem;
-            border-radius: 8px;
-            border: 3px solid #050505;
-            color: white;
-            font-weight: bold;
-            z-index: 3000;
-            animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
-        }
-
-        .toast-success {
-            background: var(--accent-green);
-        }
-
-        .toast-error {
-            background: var(--accent-red);
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%) scale(0.8);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0) scale(1);
-                opacity: 1;
-            }
-        }
-
-        /* Professional Modal styling */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 2000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(8px);
-        }
-
-        .modal-content {
-            background: rgba(20, 30, 45, 0.85);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            margin: 5% auto;
-            padding: 1.5rem;
-            border-radius: 16px;
-            width: 80%;
-            max-width: 800px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            position: relative;
-            animation: modalSlide 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        #deleteModal {
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-            display: none;
-        }
-
-        #deleteModal .modal-content {
-            max-width: 500px;
-            margin: 10% auto;
-        }
-
-        .modal-inner {
-            background: transparent;
-            border-radius: 10px;
-            padding: 1.5rem;
-            position: relative;
-            overflow: hidden;
-            color: var(--text-color);
-        }
-
-        .modal-inner::before {
-            display: none;
-        }
-
-        .modal-header,
-        .modal-body,
-        #editUserForm {
-            position: relative;
-            z-index: 2;
-        }
-
-        .modal-header {
-            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 1.5rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h2 {
-            font-size: 2rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--accent-blue);
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
-            margin: 0;
-        }
-
-        .close {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 2rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-            line-height: 1;
-        }
-
-        .close:hover {
-            color: var(--accent-red);
-            transform: scale(1.2) rotate(90deg);
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-        }
-
-        .form-grid label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--accent-blue);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .form-grid input,
-        .form-grid select {
-            width: 100%;
-            padding: 1rem;
-            margin-top: 0;
-            margin-bottom: 0;
-            background: rgba(0, 0, 0, 0.4);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            color: var(--text-color);
-            transition: all 0.3s;
-        }
-
-        .form-grid input:focus,
-        .form-grid select:focus {
-            outline: none;
-            border-color: var(--accent-yellow);
-            background: rgba(0, 0, 0, 0.6);
-            box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
-        }
-
-        .modal-body {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .detail-item {
-            margin-bottom: 0;
-        }
-
-        .detail-label {
-            font-weight: 700;
-            color: var(--accent-green);
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: block;
-            margin-bottom: 0.3rem;
-        }
-
-        .detail-value {
-            font-size: 1.1rem;
-            color: white;
-            font-weight: 500;
-        }
-
-        @keyframes modalSlide {
-            from {
-                transform: translateY(-50px) scale(0.9);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateY(0) scale(1);
-                opacity: 1;
-            }
-        }
     </style>
 </head>
 
 <body>
-    <nav class="navbar">
-        <div class="navdiv">
-            <div class="logo">
-                <a href="dashboard.php" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff5500" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="18.5" cy="17.5" r="3.5"/>
-                        <circle cx="5.5" cy="17.5" r="3.5"/>
-                        <circle cx="15" cy="5" r="1"/>
-                        <path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
-                    </svg>
-                    <span style="font-weight: 800; color: #ffffff; letter-spacing: 0.5px;">ADMIN <span style="color: var(--accent-orange, #ff5500);">PANEL</span></span>
-                </a>
+    <div class="app-layout">
+        <?php
+        include_once __DIR__ . '/../includes/sidebar.php';
+        render_sidebar('manage_users');
+        ?>
+
+        <div class="app-main">
+            <main class="main-content">
+    <div class="container" style="max-width: 1200px; margin: 2rem auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <div>
+                <h1>User Management</h1>
+                <p style="color: #94a3b8; font-size: 0.95rem;">Manage registered user accounts</p>
             </div>
-            <ul>
-                <li><a href="dashboard.php">Dashboard</a></li>
-                <li><a href="manage_users.php" style="color: var(--accent-blue);">Manage Users</a></li>
-                <?php if ($can_view_user_logs || $can_view_admin_logs): ?>
-                <li><a href="audit_logs.php">Audit Logs</a></li>
-                <?php endif; ?>
-
-                <button onclick="openLogoutModal()">Logout</button>
-            </ul>
-        </div>
-    </nav>
-
-    <div class="container">
-        <h1>Manage Users</h1>
-        <p>View and manage user accounts. <em>Note: You can only manage users with the "user" role.</em></p>
-
-        <div class="info-box">
-            <strong>Your Admin Privileges:</strong>
-            <?php if ($can_view_users): ?><span style="color: var(--accent-green); margin-left: 10px;">✓ View users</span><?php endif; ?>
-            <?php if ($can_block): ?><span style="color: var(--accent-green); margin-left: 10px;">✓ Block/Unblock users</span><?php endif; ?>
-            <?php if ($can_edit): ?><span style="color: var(--accent-green); margin-left: 10px;">✓ Edit user info</span><?php endif; ?>
-            <?php if ($can_delete_users): ?><span style="color: var(--accent-green); margin-left: 10px;">✓ Delete users</span><?php endif; ?>
+            <?php if ($can_create_users): ?>
+            <button class="btn-create-user" onclick="openCreateUserModal()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Create User
+            </button>
+            <?php endif; ?>
         </div>
 
-        <?php if ($can_view_users): ?>
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Search by name, username, or email..."
-                onkeyup="filterTable()">
-        </div>
 
-        <div class="table-container">
-            <div class="table-wrapper">
-                <table id="usersTable">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>ID No</th>
-                            <th>Name</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usersTableBody">
-                        <tr>
-                            <td colspan="7" style="text-align: center;">Loading...</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <!-- Filter Toolbar -->
+        <div class="filter-toolbar">
+            <div class="search-input-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="searchInput" placeholder="Search by ID Number, Username, Name, Email..." oninput="filterUsers()">
+            </div>
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label for="statusFilter">Status:</label>
+                    <select id="statusFilter" onchange="filterUsers()">
+                        <option value="all">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="blocked">Blocked</option>
+                    </select>
+                </div>
             </div>
         </div>
-        <?php else: ?>
-        <div class="table-container" style="text-align: center; padding: 3rem;">
-            <h2 style="color: var(--accent-red); margin-bottom: 1rem;">Access Restricted</h2>
-            <p style="color: var(--text-muted);">You do not have the required "View Users" privilege to load this list.</p>
+
+        <!-- Users Table -->
+        <div class="table-card">
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        <th>ID Number</th>
+                        <th>Full Name</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <tr><td colspan="6" style="text-align: center; color: #94a3b8;">Loading user accounts...</td></tr>
+                </tbody>
+            </table>
         </div>
-        <?php endif; ?>
     </div>
 
-    <!-- View User Modal -->
-    <div id="viewUserModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-inner">
-                <div class="modal-header">
-                    <h2 id="modalUserName">User Details</h2>
-                    <span class="close" onclick="closeModal('viewUserModal')">&times;</span>
+    <!-- Create User Modal (4 fields: ID Number, Username, Role (User), Default Password) -->
+    <div class="app-modal-overlay" id="createUserModal">
+        <div class="app-modal-card">
+            <div class="modal-title-row">
+                <h3>Create User Account</h3>
+                <button class="btn-modal-close" onclick="closeModal('createUserModal')">&times;</button>
+            </div>
+            <form id="createUserForm" onsubmit="handleCreateUser(event)" novalidate>
+                <div class="form-group-modal">
+                    <label>ID Number <span style="color: #94a3b8; font-size: 0.75rem; font-weight: normal;">(Auto-generated)</span></label>
+                    <input type="text" id="createIdNo" class="form-control-modal" readonly placeholder="Generating..." style="background: rgba(255,255,255,0.05); color: #94a3b8; cursor: not-allowed; font-family: monospace;">
+                    <small class="error-msg" id="createIdNo_error"></small>
                 </div>
-                <div class="modal-body" id="modalBody">
-                    <!-- Details will be populated here -->
+
+                <div class="form-group-modal">
+                    <label>Username <span style="color: #ef4444;">*</span></label>
+                    <input type="text" id="createUsername" class="form-control-modal" placeholder="Enter username" maxlength="30">
+                    <small class="error-msg" id="createUsername_error"></small>
                 </div>
+
+                <div class="form-group-modal">
+                    <label>Role</label>
+                    <input type="text" class="form-control-modal" value="User" readonly style="color: #94a3b8; background: rgba(255,255,255,0.05);">
+                </div>
+
+                <div class="form-group-modal">
+                    <label>Password <span style="color: #ef4444;">*</span></label>
+                    <div style="position: relative;">
+                        <input type="password" id="createPassword" class="form-control-modal" value="" placeholder="Enter password" style="padding-right: 2.5rem; font-family: monospace;" oninput="checkCreatePasswordStrength()" onblur="checkCreatePassword(true)">
+                        <button type="button" class="password-toggle-btn" onclick="toggleCreatePasswordVisibility(this)" aria-label="Toggle password visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0; display: flex; align-items: center;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Password Strength Bar (hidden initially when blank) -->
+                    <div id="createPasswordStrengthWrap" style="margin-top: 8px; display: none;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 0.73rem; color: #94a3b8;">Password Strength:</span>
+                            <span id="createStrengthLabel" style="font-size: 0.75rem; font-weight: 700; color: #94a3b8;">Weak</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; height: 5px;">
+                            <div id="createBar1" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
+                            <div id="createBar2" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
+                            <div id="createBar3" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
+                            <div id="createBar4" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
+                        </div>
+                        <small style="color: #94a3b8; font-size: 0.72rem; display: block; margin-top: 5px;">Must be at least 8 characters with uppercase, number, and special character.</small>
+                    </div>
+                    <small style="color: #94a3b8; font-size: 0.75rem; display: block; margin-top: 4px;">User will be prompted to change password on first login.</small>
+                    <small class="error-msg" id="createPassword_error"></small>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn-action" style="background: rgba(255,255,255,0.1); color: #fff;" onclick="closeModal('createUserModal')">Cancel</button>
+                    <button type="submit" class="btn-create-user">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Details Modal (NO Password Displayed) -->
+    <div class="app-modal-overlay" id="viewDetailsModal">
+        <div class="app-modal-card">
+            <div class="modal-title-row">
+                <h3>User Details</h3>
+                <button class="btn-modal-close" onclick="closeModal('viewDetailsModal')">&times;</button>
+            </div>
+            <div class="details-grid">
+                <div class="details-cell">
+                    <div class="label">ID Number</div>
+                    <div class="value" id="viewIdNo">--</div>
+                </div>
+                <div class="details-cell">
+                    <div class="label">Username</div>
+                    <div class="value" id="viewUsername">--</div>
+                </div>
+                <div class="details-cell" style="grid-column: 1 / -1;">
+                    <div class="label">Full Name</div>
+                    <div class="value" id="viewFullName">--</div>
+                </div>
+                <div class="details-cell">
+                    <div class="label">Role</div>
+                    <div class="value" id="viewRole">USER</div>
+                </div>
+                <div class="details-cell">
+                    <div class="label">Account Status</div>
+                    <div class="value" id="viewStatus">--</div>
+                </div>
+                <div class="details-cell" style="grid-column: 1 / -1; display: none;" id="viewReasonCell">
+                    <div class="label" id="viewReasonLabel" style="color: #f87171;">Reason</div>
+                    <div class="value" id="viewReasonVal" style="color: #fca5a5; font-size: 0.85rem; white-space: pre-wrap; margin-top: 0.25rem;"></div>
+                </div>
+                <div class="details-cell" style="grid-column: 1 / -1; display: none;" id="viewFileCell">
+                    <div class="label" style="color: #60a5fa;">Attached Supporting File</div>
+                    <div class="value" id="viewFileVal" style="margin-top: 0.25rem;"></div>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end;">
+                <button type="button" class="btn-action" style="background: rgba(255,255,255,0.1); color: #fff; padding: 0.6rem 1.2rem;" onclick="closeModal('viewDetailsModal')">Close</button>
             </div>
         </div>
     </div>
 
     <!-- Edit User Modal -->
-    <div id="editUserModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-inner">
-                <div class="modal-header">
-                    <h2 style="color: var(--accent-orange);">Edit User</h2>
-                    <span class="close" onclick="closeModal('editUserModal')">&times;</span>
+    <div class="app-modal-overlay" id="editUserModal">
+        <div class="app-modal-card">
+            <div class="modal-title-row">
+                <h3>Edit User Account</h3>
+                <button class="btn-modal-close" onclick="closeModal('editUserModal')">&times;</button>
+            </div>
+            <form id="editUserForm" onsubmit="promptSensitiveAction(event, 'update_user_info')" novalidate>
+                <input type="hidden" id="editUserId">
+
+                <div class="form-group-modal">
+                    <label>ID Number <span style="color: #94a3b8; font-size: 0.75rem; font-weight: normal;">(Cannot be modified)</span></label>
+                    <input type="text" id="editIdNo" class="form-control-modal" readonly style="background: rgba(255,255,255,0.05); color: #94a3b8; cursor: not-allowed; font-family: monospace;" required>
                 </div>
-                <form id="editUserForm" onsubmit="event.preventDefault(); submitEditForm();">
-                    <input type="hidden" id="edit_user_id">
-                    <div class="form-grid">
-                        <div><label>ID No</label><input type="text" id="edit_idno" readonly style="background: rgba(255,255,255,0.08); cursor: not-allowed;"></div>
-                        <div><label>First Name</label><input type="text" id="edit_firstname" required></div>
-                        <div><label>Middle Initial</label><input type="text" id="edit_middlename" maxlength="1"></div>
-                        <div><label>Last Name</label><input type="text" id="edit_lastname" required></div>
+
+                <div class="form-group-modal">
+                    <label>Full Name <span style="color: #ef4444;">*</span></label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
                         <div>
-                            <label>Suffix</label>
-                            <select id="edit_suffix">
-                                <option value="">None</option>
-                                <option value="Sr">Sr.</option>
-                                <option value="Jr">Jr.</option>
-                            </select>
+                            <input type="text" id="editFirstName" class="form-control-modal" placeholder="First Name" required maxlength="25" oninput="checkEditFirstName(false)" onblur="checkEditFirstName(true)">
+                            <small class="error-msg" id="editFirstName_error"></small>
                         </div>
-                        <div><label>Sex</label><select id="edit_sex">
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                            </select></div>
-                        <div><label>Birthdate</label><input type="date" id="edit_birthdate"
-                                onchange="calculateAgeEdit()"></div>
-                        <div><label>Age</label><input type="text" id="edit_age" readonly></div>
-
-                        <div><label>Purok</label><input type="text" id="edit_purokstreet"></div>
-                        <div><label>Barangay</label><input type="text" id="edit_brgy"></div>
-                        <div><label>Municipality</label><input type="text" id="edit_municipal"></div>
-                        <div><label>Province</label><input type="text" id="edit_province"></div>
-                        <div><label>Country</label><input type="text" id="edit_country"></div>
-                        <div><label>Zip Code</label><input type="text" id="edit_zipcode"></div>
-
-                        <div><label>Username</label><input type="text" id="edit_username" required></div>
-                        <div><label>Email</label><input type="email" id="edit_email" required></div>
+                        <div>
+                            <input type="text" id="editLastName" class="form-control-modal" placeholder="Last Name" required maxlength="25" oninput="checkEditLastName(false)" onblur="checkEditLastName(true)">
+                            <small class="error-msg" id="editLastName_error"></small>
+                        </div>
                     </div>
-                    <button type="submit" class="btn-action btn-block"
-                        style="margin-top: 1.5rem; width: 100%; border: border-color: var(--accent-orange); font-size: 1rem; padding: 1rem;">Save
-                        Changes</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Approve User Modal -->
-    <div class="modal" id="approveModal">
-        <div class="modal-content">
-            <div class="modal-inner" style="text-align: center;">
-                <h3 style="color: var(--accent-green); margin-top: 0;">Confirm Approval</h3>
-                <p>Are you sure you want to approve this user? They will be able to log in to the system.</p>
-                <div class="modal-buttons" style="margin-top: 2rem;">
-                    <button class="btn-action btn-unblock" id="confirmApproveBtn">Approve</button>
-                    <button class="btn-action" style="background: rgba(255,255,255,0.1); color: white;"
-                        onclick="closeModal('approveModal')">Cancel</button>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div class="modal" id="deleteModal">
-        <div class="modal-content">
-            <div class="modal-inner" style="text-align: center;">
-                <h3 style="color: var(--accent-red); margin-top: 0;">Confirm Delete</h3>
-                <p>Are you sure you want to deactivate this user? They will no longer be able to log in to the system.</p>
-                <div class="modal-buttons" style="margin-top: 2rem;">
-                    <button class="btn-action btn-delete" style="border-color: #ff1a1a;" id="confirmDeleteBtn">Delete</button>
-                    <button class="btn-action" style="background: rgba(255,255,255,0.1); color: white;" onclick="closeModal('deleteModal')">Cancel</button>
+                <div class="form-group-modal">
+                    <label>Username <span style="color: #94a3b8; font-size: 0.75rem; font-weight: normal;">(Cannot be modified)</span></label>
+                    <input type="text" id="editUsername" class="form-control-modal" readonly style="background: rgba(255,255,255,0.05); color: #94a3b8; cursor: not-allowed;" required>
                 </div>
-            </div>
+
+                <div class="form-group-modal">
+                    <label>Account Status</label>
+                    <select id="editStatus" class="form-control-modal" required>
+                        <option value="active">Active</option>
+                        <option value="blocked">Blocked</option>
+                        <option value="pending">Pending</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 0.85rem; margin-top: 1.5rem;">
+                    <button type="button" class="modal-btn modal-btn-cancel" onclick="closeModal('editUserModal')">Cancel</button>
+                    <button type="submit" class="btn-create-user">Proceed to Save</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- Logout Confirmation Modal -->
-    <div class="modal-overlay" id="logoutModal">
-        <div class="modal-content-logout">
-            <div class="modal-icon">👋</div>
-            <h3>Confirm Logout</h3>
-            <p>Are you sure you want to log out of your account?</p>
-            <div class="modal-buttons-logout">
-                <button class="modal-btn modal-btn-cancel" onclick="closeLogoutModal()">Cancel</button>
-                <button class="modal-btn modal-btn-confirm" onclick="confirmLogout()">Logout</button>
+    <!-- Sensitive Action Confirmation & Admin Password Verification Modal -->
+    <div class="app-modal-overlay" id="verificationModal">
+        <div class="app-modal-card" style="max-width: 440px; text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">&#128274;</div>
+            <h3 id="verifTitle" style="color: #ffffff; margin-bottom: 0.5rem; font-size: 1.25rem;">Confirm Action</h3>
+            <p id="verifPrompt" style="color: #cbd5e1; font-size: 0.88rem; margin-bottom: 1.25rem;">Please enter your current administrator password to confirm this action.</p>
+
+            <form id="verificationForm" onsubmit="executeVerifiedAction(event)">
+                <!-- Reason input (for delete and block) -->
+                <div class="form-group-modal" id="reasonGroup" style="display: none; text-align: left;">
+                    <label>Reason <span style="color: #ef4444;">*</span></label>
+                    <textarea id="actionReason" class="form-control-modal" placeholder="Enter reason for this action..." rows="2"></textarea>
+                    
+                    <label style="margin-top: 0.85rem; display: block; font-size: 0.82rem; color: #cbd5e1;">Attach Supporting File / Document <span style="color: #94a3b8; font-weight: normal; font-size: 0.75rem;">(Optional)</span></label>
+                    <input type="file" id="actionFile" class="form-control-modal" style="padding: 0.45rem 0.6rem; font-size: 0.82rem; color: #94a3b8; background: rgba(255,255,255,0.05);" accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.txt">
+                </div>
+
+                <div class="form-group-modal" style="text-align: left;">
+                    <label>Your Administrator Password <span style="color: #ef4444;">*</span></label>
+                    <input type="password" id="adminConfirmPassword" class="form-control-modal" placeholder="Enter current password" required autocomplete="current-password">
+                </div>
+
+                <div style="display: flex; justify-content: center; gap: 0.85rem; margin-top: 1.5rem;">
+                    <button type="button" class="modal-btn modal-btn-cancel" onclick="closeModal('verificationModal')">Cancel</button>
+                    <button type="submit" class="btn-create-user" style="padding: 0.65rem 1.6rem;">Confirm &amp; Execute</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Logout Modal (One Piece Pirate Theme) -->
+    <div class="app-modal-overlay" id="logoutModal">
+        <div class="app-modal-card" style="max-width: 420px; text-align: center;">
+            <div class="pirate-emblem-ring" style="width: 60px; height: 60px; margin: 0 auto 1.1rem auto;">
+                <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 14 L50 50 M50 14 L14 50" stroke="#e2e8f0" stroke-width="5" stroke-linecap="round"/>
+                    <circle cx="12" cy="12" r="3.5" fill="#cbd5e1"/>
+                    <circle cx="12" cy="16" r="3.5" fill="#cbd5e1"/>
+                    <circle cx="52" cy="12" r="3.5" fill="#cbd5e1"/>
+                    <circle cx="52" cy="16" r="3.5" fill="#cbd5e1"/>
+                    <circle cx="12" cy="48" r="3.5" fill="#cbd5e1"/>
+                    <circle cx="12" cy="52" r="3.5" fill="#cbd5e1"/>
+                    <circle cx="52" cy="48" r="3.5" fill="#cbd5e1"/>
+                    <circle cx="52" cy="52" r="3.5" fill="#cbd5e1"/>
+                    <circle cx="32" cy="34" r="14" fill="#f8fafc"/>
+                    <rect x="26" y="42" width="12" height="7" rx="2" fill="#f8fafc"/>
+                    <circle cx="27.5" cy="35" r="3.2" fill="#0f172a"/>
+                    <circle cx="36.5" cy="35" r="3.2" fill="#0f172a"/>
+                    <line x1="28.5" y1="44" x2="28.5" y2="48" stroke="#0f172a" stroke-width="1.3"/>
+                    <line x1="32" y1="44" x2="32" y2="48" stroke="#0f172a" stroke-width="1.3"/>
+                    <line x1="35.5" y1="44" x2="35.5" y2="48" stroke="#0f172a" stroke-width="1.3"/>
+                    <ellipse cx="32" cy="24" rx="12" ry="7.5" fill="#f59e0b"/>
+                    <ellipse cx="32" cy="27" rx="12.2" ry="3" fill="#ef4444"/>
+                    <ellipse cx="32" cy="28" rx="22" ry="5" fill="#f59e0b"/>
+                </svg>
+            </div>
+            <h3 style="color: #ffffff; margin-bottom: 0.5rem; font-size: 1.4rem; font-weight: 700;">Disembark <span style="color: #f59e0b;">Ship?</span></h3>
+            <p style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.5rem;">Are you sure you want to log out of your One Piece crew session?</p>
+            <div style="display: flex; justify-content: center; gap: 0.85rem;">
+                <button type="button" class="modal-btn modal-btn-cancel" onclick="closeModal('logoutModal')">Stay on Board</button>
+                <button type="button" class="btn-create-user" style="padding: 0.65rem 1.6rem;" onclick="confirmLogout()">Log Out</button>
             </div>
         </div>
     </div>
 
     <script>
-        const canDelete = <?php echo $can_delete_users ? 'true' : 'false'; ?>;
-        const canBlock = <?php echo $can_block ? 'true' : 'false'; ?>;
-        const canEdit = <?php echo $can_edit ? 'true' : 'false'; ?>;
-        
-        function openLogoutModal() {
-            document.getElementById('logoutModal').classList.add('active');
+        const canApprove = <?php echo $can_approve ? 'true' : 'false'; ?>;
+        let allUsers = [];
+        let pendingActionPayload = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUsers();
+            initCreateUserListeners();
+        });
+
+        function initCreateUserListeners() {
+            const uInput = document.getElementById("createUsername");
+            if (uInput) {
+                uInput.addEventListener("input", () => checkCreateUserUsername(false));
+                uInput.addEventListener("blur", () => {
+                    if (checkCreateUserUsername(true)) {
+                        checkCreateUserUsernameDuplicate();
+                    }
+                });
+            }
+
+            const pInput = document.getElementById("createPassword");
+            if (pInput) {
+                pInput.addEventListener("input", () => checkCreateUserPassword(false));
+                pInput.addEventListener("blur", () => checkCreateUserPassword(true));
+            }
+
+            const idInput = document.getElementById("createIdNo");
+            if (idInput) {
+                idInput.addEventListener("input", () => checkCreateUserIdNo(false));
+                idInput.addEventListener("blur", () => checkCreateUserIdNo(true));
+            }
         }
 
-        function closeLogoutModal() {
-            document.getElementById('logoutModal').classList.remove('active');
+        function loadUsers() {
+            fetch('../api/manage_users_api.php')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        allUsers = data.users || [];
+                        renderUsers(allUsers);
+                    } else {
+                        alert(data.error || 'Failed to load users');
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        function renderUsers(users) {
+            const tbody = document.getElementById('usersTableBody');
+            if (!users || users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 2rem;">No user accounts found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = users.map(u => {
+                const fullName = `${u.firstname || ''} ${u.lastname || ''}`.trim() || u.username;
+                const statusBadge = `<span class="badge badge-status-${u.status}">${u.status}</span>`;
+
+                let actionOptions = `
+                    <option value="" disabled selected>Actions</option>
+                    <option value="view">View</option>
+                    <option value="edit">Edit</option>
+                `;
+
+                if (u.status === 'active') {
+                    actionOptions += `<option value="block">Block</option>`;
+                } else if (u.status === 'blocked') {
+                    actionOptions += `<option value="unblock">Unblock</option>`;
+                }
+
+                actionOptions += `<option value="delete" class="opt-delete">Delete</option>`;
+
+                return `
+                    <tr>
+                        <td style="font-family: monospace; font-weight: 700; color: #cbd5e1;">${u.idno || 'N/A'}</td>
+                        <td><strong>${escapeHtml(fullName)}</strong></td>
+                        <td style="color: #60a5fa;">${escapeHtml(u.username)}</td>
+                        <td><span class="badge badge-role-user">USER</span></td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <select class="action-select" onchange="handleUserAction(this, '${u.idno}')">
+                                ${actionOptions}
+                            </select>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function handleUserAction(selectEl, idno) {
+            const action = selectEl.value;
+            selectEl.value = '';
+            if (!action) return;
+
+            const u = allUsers.find(a => (a.idno || a.id) == idno);
+            const username = u ? (u.username || idno) : idno;
+
+            if (action === 'view') {
+                openViewDetails(idno);
+            } else if (action === 'edit') {
+                openEditUser(idno);
+            } else if (action === 'block') {
+                confirmSensitiveAction('block', idno, 'Are you sure you want to block this user account?', true);
+            } else if (action === 'unblock') {
+                confirmSensitiveAction('unblock', idno, 'Are you sure you want to unblock this user account?');
+            } else if (action === 'delete') {
+                confirmSensitiveAction('delete', idno, `Are you sure you want to permanently delete account (${escapeHtml(username)})? This will remove the record completely from the database.`, true);
+            }
+        }
+
+        function filterUsers() {
+            const search = document.getElementById('searchInput').value.toLowerCase().trim();
+            const status = document.getElementById('statusFilter').value;
+
+            const filtered = allUsers.filter(u => {
+                const fullName = `${u.firstname || ''} ${u.lastname || ''}`.toLowerCase();
+                const username = (u.username || '').toLowerCase();
+                const idno = (u.idno || '').toLowerCase();
+                const email = (u.email || '').toLowerCase();
+
+                const matchesSearch = !search || fullName.includes(search) || username.includes(search) || idno.includes(search) || email.includes(search);
+                const matchesStatus = status === 'all' || u.status === status;
+
+                return matchesSearch && matchesStatus;
+            });
+
+            renderUsers(filtered);
+        }
+
+        function setCreateUserError(inputId, msg) {
+            const errEl = document.getElementById(inputId + "_error");
+            const inpEl = document.getElementById(inputId);
+            if (errEl) {
+                errEl.textContent = msg;
+                errEl.style.display = "block";
+            }
+            if (inpEl) inpEl.classList.add("input-error-highlight");
+        }
+
+        function clearCreateUserError(inputId) {
+            const errEl = document.getElementById(inputId + "_error");
+            const inpEl = document.getElementById(inputId);
+            if (errEl) {
+                errEl.textContent = "";
+                errEl.style.display = "none";
+            }
+            if (inpEl) inpEl.classList.remove("input-error-highlight");
+        }
+
+        function clearAllCreateUserErrors() {
+            ['createIdNo', 'createUsername', 'createPassword'].forEach(id => clearCreateUserError(id));
+        }
+
+        function toggleCreatePasswordVisibility(btn) {
+            const input = document.getElementById('createPassword');
+            if (!input) return;
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            btn.innerHTML = isPassword 
+                ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+                : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+        }
+
+        function checkCreatePasswordStrength() {
+            const pwdInput = document.getElementById('createPassword');
+            const wrap = document.getElementById('createPasswordStrengthWrap');
+            const label = document.getElementById('createStrengthLabel');
+            const bars = [
+                document.getElementById('createBar1'),
+                document.getElementById('createBar2'),
+                document.getElementById('createBar3'),
+                document.getElementById('createBar4')
+            ];
+
+            if (!pwdInput) return false;
+            const pwd = pwdInput.value;
+
+            if (!pwd || pwd.length === 0) {
+                if (wrap) wrap.style.display = 'none';
+                clearCreateUserError('createPassword');
+                bars.forEach(b => {
+                    if (b) b.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                });
+                if (label) label.textContent = '';
+                return false;
+            }
+
+            if (wrap) wrap.style.display = 'block';
+
+            const matchedCases = ["[A-Z]", "[0-9]", "[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]", ".{8,}"];
+            let score = 0;
+            matchedCases.forEach(pattern => {
+                if (new RegExp(pattern).test(pwd)) score++;
+            });
+
+            let color = "#ef4444";
+            let levelText = "Weak password";
+            switch (score) {
+                case 0:
+                case 1:
+                    levelText = "Weak password";
+                    color = "#ef4444";
+                    break;
+                case 2:
+                    levelText = "Fair password";
+                    color = "#f97316";
+                    break;
+                case 3:
+                    levelText = "Medium password";
+                    color = "#f59e0b";
+                    break;
+                case 4:
+                    levelText = "Strong password";
+                    color = "#10b981";
+                    break;
+            }
+
+            bars.forEach((b, idx) => {
+                if (b) {
+                    if (idx < score) {
+                        b.style.backgroundColor = color;
+                    } else {
+                        b.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    }
+                }
+            });
+
+            if (label) {
+                label.textContent = levelText;
+                label.style.color = color;
+            }
+
+            if (pwd.length < 8) {
+                setCreateUserError('createPassword', 'Password must be at least 8 characters long.');
+                return false;
+            } else if (!/[A-Z]/.test(pwd) || !/[0-9]/.test(pwd) || !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) {
+                setCreateUserError('createPassword', 'Must include uppercase, number, and special symbol.');
+                return false;
+            } else {
+                clearCreateUserError('createPassword');
+                return true;
+            }
+        }
+
+        function checkCreatePassword(showEmpty) {
+            const el = document.getElementById("createPassword");
+            if (!el) return true;
+            const val = el.value;
+            if (!val) {
+                if (showEmpty) {
+                    setCreateUserError("createPassword", "Password is required.");
+                    return false;
+                }
+                clearCreateUserError("createPassword");
+                return false;
+            }
+            return checkCreatePasswordStrength();
+        }
+
+        function checkCreateUsername(showEmpty) {
+            const el = document.getElementById("createUsername");
+            if (!el) return true;
+            const val = el.value.trim();
+            if (!val) {
+                if (showEmpty) {
+                    setCreateUserError("createUsername", "Username is required.");
+                    return false;
+                }
+                clearCreateUserError("createUsername");
+                return false;
+            }
+            if (val.length < 3) {
+                setCreateUserError("createUsername", "Username must be at least 3 characters.");
+                return false;
+            }
+            if (val.length > 30) {
+                setCreateUserError("createUsername", "Username cannot exceed 30 characters.");
+                return false;
+            }
+            if (!/^[a-zA-Z0-9_]+$/.test(val)) {
+                setCreateUserError("createUsername", "Username can only contain letters, numbers, and underscores.");
+                return false;
+            }
+            clearCreateUserError("createUsername");
+            return true;
+        }
+
+        function openCreateUserModal() {
+            document.getElementById('createUserForm').reset();
+            clearAllCreateUserErrors();
+            const pwdInput = document.getElementById('createPassword');
+            if (pwdInput) {
+                pwdInput.value = '';
+                pwdInput.type = 'password';
+            }
+            checkCreatePasswordStrength();
+            const idInput = document.getElementById('createIdNo');
+            if (idInput) {
+                idInput.value = 'Generating...';
+            }
+            fetch('../api/manage_users_api.php?action=get_next_idno&role=user')
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success && idInput) document.getElementById('createIdNo').value = d.idno;
+                })
+                .catch(() => {
+                    if (idInput) idInput.value = '';
+                });
+            openModal('createUserModal');
+        }
+
+        function handleCreateUser(e) {
+            e.preventDefault();
+            const vUn = checkCreateUsername(true);
+            const vPw = checkCreatePassword(true);
+
+            if (!vUn) {
+                document.getElementById('createUsername').focus();
+                return;
+            }
+            if (!vPw) {
+                document.getElementById('createPassword').focus();
+                return;
+            }
+
+            const usernameVal = document.getElementById('createUsername').value.trim();
+            const passwordVal = document.getElementById('createPassword').value;
+
+            const payload = {
+                action: 'create_user',
+                idno: document.getElementById('createIdNo').value.trim(),
+                username: usernameVal,
+                password: passwordVal,
+                role: 'user'
+            };
+
+            fetch('../api/manage_users_api.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    alert(res.message);
+                    closeModal('createUserModal');
+                    loadUsers();
+                } else {
+                    if (res.error && res.error.toLowerCase().includes('username')) {
+                        setCreateUserError('createUsername', res.error);
+                        document.getElementById('createUsername').focus();
+                    } else if (res.error && res.error.toLowerCase().includes('password')) {
+                        setCreateUserError('createPassword', res.error);
+                        document.getElementById('createPassword').focus();
+                    } else {
+                        alert(res.error || 'Failed to create user');
+                    }
+                }
+            })
+            .catch(err => alert('Network error: ' + err));
+        }
+
+        function openViewDetails(userId) {
+            const u = allUsers.find(a => (a.idno || a.id) == userId);
+            if (!u) return;
+
+            document.getElementById('viewIdNo').textContent = u.idno || 'N/A';
+            document.getElementById('viewUsername').textContent = u.username;
+            document.getElementById('viewFullName').textContent = `${u.firstname || ''} ${u.lastname || ''}`.trim() || 'N/A';
+            document.getElementById('viewRole').textContent = 'USER';
+            document.getElementById('viewStatus').textContent = u.status.toUpperCase();
+
+            const reasonCell = document.getElementById('viewReasonCell');
+            const fileCell = document.getElementById('viewFileCell');
+            const activeReason = u.block_reason || u.delete_reason;
+            const activeFile = u.block_file || u.delete_file;
+
+            if (activeReason) {
+                reasonCell.style.display = 'block';
+                document.getElementById('viewReasonLabel').textContent = u.block_reason ? 'Block Reason' : 'Deactivation / Delete Reason';
+                document.getElementById('viewReasonVal').textContent = activeReason;
+            } else {
+                reasonCell.style.display = 'none';
+            }
+
+            if (activeFile) {
+                fileCell.style.display = 'block';
+                document.getElementById('viewFileVal').innerHTML = `<a href="../../uploads/${encodeURIComponent(activeFile)}" target="_blank" download style="display: inline-flex; align-items: center; gap: 0.4rem; color: #93c5fd; text-decoration: underline; font-size: 0.85rem;"><span>&#128190;</span> Download / View File (${escapeHtml(activeFile)})</a>`;
+            } else {
+                fileCell.style.display = 'none';
+            }
+
+            openModal('viewDetailsModal');
+        }
+
+        function openEditUser(userId) {
+            const u = allUsers.find(a => (a.idno || a.id) == userId);
+            if (!u) return;
+
+            clearAllEditUserErrors();
+            document.getElementById('editUserId').value = u.idno || u.id;
+            document.getElementById('editIdNo').value = u.idno || '';
+            document.getElementById('editFirstName').value = u.firstname || '';
+            document.getElementById('editLastName').value = u.lastname || '';
+            document.getElementById('editUsername').value = u.username || '';
+            document.getElementById('editStatus').value = u.status;
+
+            openModal('editUserModal');
+        }
+
+        function setEditUserError(inputId, msg) {
+            const errEl = document.getElementById(inputId + "_error");
+            const inpEl = document.getElementById(inputId);
+            if (errEl) {
+                errEl.textContent = msg;
+                errEl.style.display = "block";
+            }
+            if (inpEl) inpEl.classList.add("input-error-highlight");
+        }
+
+        function clearEditUserError(inputId) {
+            const errEl = document.getElementById(inputId + "_error");
+            const inpEl = document.getElementById(inputId);
+            if (errEl) {
+                errEl.textContent = "";
+                errEl.style.display = "none";
+            }
+            if (inpEl) inpEl.classList.remove("input-error-highlight");
+        }
+
+        function clearAllEditUserErrors() {
+            ['editFirstName', 'editLastName'].forEach(id => clearEditUserError(id));
+        }
+
+        // Left-to-Right Name Field Scanner (Same as registration.php / signup.js)
+        function scanNameField(val, fieldLabel) {
+            if (val === "") return "";
+
+            // 1. Check leading space at index 0
+            if (val.charAt(0) === ' ') {
+                return "The first character of the " + fieldLabel.toLowerCase() + " should not be a space.";
+            }
+
+            // 2. Scan characters left-to-right (from index 0 to end)
+            for (var i = 0; i < val.length; i++) {
+                var char = val.charAt(i);
+
+                // Double space starting at index i
+                if (char === ' ' && i + 1 < val.length && val.charAt(i + 1) === ' ') {
+                    return fieldLabel + " cannot contain double space.";
+                }
+
+                // 3 consecutive repeated letters starting at index i
+                if (i + 2 < val.length && /[a-zA-Z]/.test(char)) {
+                    if (char.toLowerCase() === val.charAt(i + 1).toLowerCase() && char.toLowerCase() === val.charAt(i + 2).toLowerCase()) {
+                        return fieldLabel + " cannot contain three consecutive repeated letters.";
+                    }
+                }
+
+                // Number check at index i
+                if (/[0-9]/.test(char)) {
+                    return fieldLabel + " cannot contain numbers.";
+                }
+
+                // Special character check at index i
+                if (/[^a-zA-Z\s]/.test(char)) {
+                    return fieldLabel + " cannot contain special characters.";
+                }
+
+                // Capitalization check
+                if (i === 0) {
+                    if (/[a-z]/.test(char)) {
+                        return "The first letter of " + fieldLabel.toLowerCase() + " should be capitalized.";
+                    }
+                } else if (val.charAt(i - 1) === ' ') {
+                    // First character of the second/next word
+                    if (/[a-z]/.test(char)) {
+                        return "The second word of " + fieldLabel.toLowerCase() + " should be capitalized.";
+                    }
+                } else {
+                    // Letters within the word after the first letter must be lowercase
+                    if (/[A-Z]/.test(char)) {
+                        return "The first letter of " + fieldLabel.toLowerCase() + " should be the only capitalized.";
+                    }
+                }
+            }
+
+            // 3. Length checks (only if character-by-character scan passed)
+            if (val.length < 3) {
+                return fieldLabel + " fields must be at least 3 characters.";
+            }
+            if (val.length > 25) {
+                return fieldLabel + " should not exceed 25 characters.";
+            }
+
+            return "";
+        }
+
+        function checkEditFirstName(showEmpty) {
+            const el = document.getElementById('editFirstName');
+            if (!el) return true;
+            const val = el.value;
+
+            if (val === "") {
+                if (showEmpty) {
+                    setEditUserError('editFirstName', 'Firstname fields must be filled in.');
+                    return false;
+                }
+                clearEditUserError('editFirstName');
+                return false;
+            }
+
+            const err = scanNameField(val, "Firstname");
+            if (err) {
+                setEditUserError('editFirstName', err);
+                return false;
+            }
+
+            clearEditUserError('editFirstName');
+            return true;
+        }
+
+        function checkEditLastName(showEmpty) {
+            const el = document.getElementById('editLastName');
+            if (!el) return true;
+            const val = el.value;
+
+            if (val === "") {
+                if (showEmpty) {
+                    setEditUserError('editLastName', 'Lastname fields must be filled in.');
+                    return false;
+                }
+                clearEditUserError('editLastName');
+                return false;
+            }
+
+            const err = scanNameField(val, "Lastname");
+            if (err) {
+                setEditUserError('editLastName', err);
+                return false;
+            }
+
+            clearEditUserError('editLastName');
+            return true;
+        }
+
+        function validateEditUserForm() {
+            const vFn = checkEditFirstName(true);
+            const vLn = checkEditLastName(true);
+
+            if (!vFn) { document.getElementById('editFirstName').focus(); return false; }
+            if (!vLn) { document.getElementById('editLastName').focus(); return false; }
+
+            return true;
+        }
+
+        function promptSensitiveAction(e, actionType) {
+            e.preventDefault();
+            if (actionType === 'update_user_info') {
+                if (!validateEditUserForm()) {
+                    return;
+                }
+
+                pendingActionPayload = {
+                    action: 'update_user_info',
+                    user_id: document.getElementById('editUserId').value,
+                    idno: document.getElementById('editIdNo').value.trim(),
+                    firstname: document.getElementById('editFirstName').value.trim(),
+                    lastname: document.getElementById('editLastName').value.trim(),
+                    username: document.getElementById('editUsername').value.trim(),
+                    role: 'user',
+                    status: document.getElementById('editStatus').value
+                };
+
+                closeModal('editUserModal');
+                setupVerificationModal('Are you sure you want to edit this user account?', false);
+            }
+        }
+
+        function confirmSensitiveAction(action, userId, promptText, requiresReason = false) {
+            pendingActionPayload = {
+                action: action,
+                user_id: userId
+            };
+            setupVerificationModal(promptText, requiresReason);
+        }
+
+        function setupVerificationModal(promptText, requiresReason) {
+            document.getElementById('verifPrompt').textContent = promptText;
+            document.getElementById('adminConfirmPassword').value = '';
+            const reasonGroup = document.getElementById('reasonGroup');
+            const reasonInput = document.getElementById('actionReason');
+            const fileInput = document.getElementById('actionFile');
+            reasonInput.value = '';
+            if (fileInput) fileInput.value = '';
+
+            if (requiresReason) {
+                reasonGroup.style.display = 'block';
+                reasonInput.required = true;
+            } else {
+                reasonGroup.style.display = 'none';
+                reasonInput.required = false;
+            }
+
+            openModal('verificationModal');
+        }
+
+        function executeVerifiedAction(e) {
+            e.preventDefault();
+            if (!pendingActionPayload) return;
+
+            const password = document.getElementById('adminConfirmPassword').value;
+            pendingActionPayload.admin_password = password;
+
+            const reasonGroup = document.getElementById('reasonGroup');
+            if (reasonGroup && reasonGroup.style.display !== 'none') {
+                const reason = document.getElementById('actionReason').value.trim();
+                if (!reason) {
+                    alert('Please provide a reason to proceed.');
+                    return;
+                }
+                pendingActionPayload.reason = reason;
+            }
+
+            const formData = new FormData();
+            for (const key in pendingActionPayload) {
+                if (typeof pendingActionPayload[key] === 'object' && pendingActionPayload[key] !== null) {
+                    formData.append(key, JSON.stringify(pendingActionPayload[key]));
+                } else {
+                    formData.append(key, pendingActionPayload[key]);
+                }
+            }
+
+            const fileInput = document.getElementById('actionFile');
+            if (fileInput && fileInput.files.length > 0) {
+                formData.append('reason_file', fileInput.files[0]);
+            }
+
+            fetch('../api/manage_users_api.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    alert(res.message);
+                    closeModal('verificationModal');
+                    loadUsers();
+                } else {
+                    alert('Action Failed: ' + (res.error || 'Unknown error'));
+                }
+            })
+            .catch(err => alert('Network error: ' + err));
+        }
+
+        function openModal(id) {
+            document.getElementById(id)?.classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id)?.classList.remove('active');
+        }
+
+        function openLogoutModal() {
+            openModal('logoutModal');
         }
 
         function confirmLogout() {
             window.location.href = '../logout.php';
         }
 
-        // Close logout modal when clicking outside
-        document.getElementById('logoutModal').addEventListener('click', function (e) {
-            if (e.target === this) {
-                closeLogoutModal();
-            }
-        });
-
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') {
-                closeLogoutModal();
-            }
-        });
-        
-        let approveUserId = null;
-        let deleteUserId = null;
-
-        document.addEventListener('DOMContentLoaded', loadUsers);
-
-        function loadUsers() {
-            fetch('../api/manage_users_api.php')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        renderTable(data.users);
-                    } else {
-                        showToast(data.error || 'Failed to load users', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('Failed to connect to server', 'error');
-                });
-        }
-
-        function renderTable(users) {
-            const tbody = document.getElementById('usersTableBody');
-
-            // If tbody doesn't exist (e.g., table was hidden due to no view_users privilege)
-            if (!tbody) return;
-
-            if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No users found.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = users.map(user => {
-                let statusClass = '';
-                let statusLabel = user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Active';
-                
-                if (user.status === 'active') {
-                    statusClass = 'status-active';
-                } else if (user.status === 'pending') {
-                    statusClass = 'status-blocked';
-                } else if (user.status === 'inactive') {
-                    statusClass = 'status-inactive';
-                } else {
-                    statusClass = 'status-blocked';
-                }
-                
-                let blockButtonHtml = '';
-                if (canBlock && user.status !== 'inactive') {
-                    if (user.status === 'pending') {
-                        blockButtonHtml = `<button class="btn-action btn-unblock" onclick="confirmApprove(${user.id})">Approve</button>`;
-                    } else if (user.status === 'blocked') {
-                        blockButtonHtml = `<button class="btn-action btn-unblock" onclick="unblockUser(${user.id})">Unblock</button>`;
-                    } else {
-                        blockButtonHtml = `<button class="btn-action btn-block" onclick="blockUser(${user.id})">Block</button>`;
-                    }
-                }
-                
-                let deleteButtonHtml = '';
-                if (canDelete && user.status !== 'inactive') {
-                     deleteButtonHtml = `<button class="btn-action btn-delete" onclick="confirmDelete(${user.id})">Delete</button>`;
-                }
-
-                let editButtonHtml = '';
-                if (canEdit) {
-                     editButtonHtml = `<button class="btn-action btn-edit" onclick="openEditModal(${user.id})">Edit</button>`;
-                }
-
-                return `
-                <tr data-search="${user.firstname} ${user.lastname} ${user.username} ${user.email}".toLowerCase()>
-                    <td>${user.id}</td>
-                    <td>${user.idno}</td>
-                    <td>${user.firstname} ${user.lastname}</td>
-                    <td>${user.username}</td>
-                    <td>${user.email}</td>
-                    <td class="${statusClass}" style="${user.status === 'pending' ? 'color: var(--accent-yellow); text-shadow: 0 0 10px rgba(255, 193, 7, 0.4);' : ''}">
-                        ${statusLabel}
-                    </td>
-                    <td>
-                        <button class="btn-action btn-view" onclick="viewUser(${user.id})">View</button>
-                        ${editButtonHtml}
-                        ${blockButtonHtml}
-                        ${deleteButtonHtml}
-                    </td>
-                </tr>
-            `}).join('');
-        }
-
-        function filterTable() {
-            const searchText = document.getElementById('searchInput').value.toLowerCase();
-            const rows = document.querySelectorAll('#usersTableBody tr');
-
-            rows.forEach(row => {
-                const searchData = row.getAttribute('data-search') || '';
-                row.style.display = searchData.includes(searchText) ? '' : 'none';
-            });
-        }
-
-        function blockUser(userId) {
-            sendAction(userId, 'block');
-        }
-
-        function unblockUser(userId) {
-            sendAction(userId, 'unblock');
-        }
-
-        function confirmApprove(userId) {
-            approveUserId = userId;
-            document.getElementById('approveModal').style.display = 'flex';
-        }
-        
-        function confirmDelete(userId) {
-            deleteUserId = userId;
-            document.getElementById('deleteModal').style.display = 'flex';
-        }
-
-        document.getElementById('confirmApproveBtn').addEventListener('click', function () {
-            if (approveUserId) {
-                sendAction(approveUserId, 'approve');
-                closeModal('approveModal');
-            }
-        });
-        
-        document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-            if (deleteUserId) {
-                fetch('../api/manage_users_api.php', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: deleteUserId })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showToast(data.message, 'success');
-                        loadUsers();
-                    } else {
-                        showToast(data.error || 'Failed to delete user', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('Failed to connect to server', 'error');
-                });
-                
-                closeModal('deleteModal');
-                deleteUserId = null;
-            }
-        });
-
-        function sendAction(userId, action) {
-            fetch('../api/manage_users_api.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: userId, action: action })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showToast(data.message, 'success');
-                        loadUsers();
-                    } else {
-                        showToast(data.error || 'Action failed', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('Failed to connect to server', 'error');
-                });
-        }
-
-        function showToast(message, type) {
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-
-            setTimeout(() => {
-                toast.remove();
-            }, 3000);
-        }
-
-        // Modal Functions
-        function viewUser(userId) {
-            fetch(`../api/manage_users_api.php?user_id=${userId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.users && data.users.length > 0) {
-                        const user = data.users[0];
-                        populateModal(user);
-                        document.getElementById('viewUserModal').style.display = 'block';
-                    } else {
-                        showToast('Failed to load user details', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('Error loading user details', 'error');
-                });
-        }
-
-        function populateModal(user) {
-            const modalBody = document.getElementById('modalBody');
-            document.getElementById('modalUserName').textContent = `${user.firstname} ${user.lastname}`;
-
-            const fields = [
-                { label: 'ID No', value: user.idno },
-                { label: 'Full Name', value: `${user.firstname} ${user.middlename ? user.middlename + '.' : ''} ${user.lastname} ${user.suffix || ''}` },
-                { label: 'Username', value: user.username },
-                { label: 'Email', value: user.email },
-                { label: 'Sex', value: user.sex },
-                { label: 'Age', value: user.age },
-                { label: 'Birthdate', value: user.birthdate },
-                { label: 'Role', value: user.role },
-                { label: 'Status', value: user.status },
-                { label: 'Zip Code', value: user.zipcode },
-                { label: 'Address', value: `${user.purokstreet}, ${user.brgy}, ${user.municipal}, ${user.province}, ${user.country}` },
-            ];
-
-            modalBody.innerHTML = fields.map(field => `
-                <div class="detail-item">
-                    <span class="detail-label">${field.label}</span>
-                    <span class="detail-value">${field.value || 'N/A'}</span>
-                </div>
-            `).join('');
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
-        // Edit User Functions
-        function openEditModal(userId) {
-            fetch(`../api/manage_users_api.php?user_id=${userId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.users && data.users.length > 0) {
-                        const user = data.users[0];
-                        document.getElementById('edit_user_id').value = user.id;
-                        document.getElementById('edit_idno').value = user.idno;
-                        document.getElementById('edit_firstname').value = user.firstname;
-                        document.getElementById('edit_middlename').value = user.middlename;
-                        document.getElementById('edit_lastname').value = user.lastname;
-                        document.getElementById('edit_suffix').value = (['Sr', 'Jr'].includes(user.suffix)) ? user.suffix : '';
-                        document.getElementById('edit_sex').value = user.sex;
-                        document.getElementById('edit_birthdate').value = user.birthdate;
-                        document.getElementById('edit_age').value = user.age;
-
-                        document.getElementById('edit_purokstreet').value = user.purokstreet;
-                        document.getElementById('edit_brgy').value = user.brgy;
-                        document.getElementById('edit_municipal').value = user.municipal;
-                        document.getElementById('edit_province').value = user.province;
-                        document.getElementById('edit_country').value = user.country;
-                        document.getElementById('edit_zipcode').value = user.zipcode;
-
-                        document.getElementById('edit_username').value = user.username;
-                        document.getElementById('edit_email').value = user.email;
-
-                        document.getElementById('editUserModal').style.display = 'block';
-                    } else {
-                        showToast('Failed to load user details', 'error');
-                    }
-                })
-                .catch(error => showToast('Error fetching user data', 'error'));
-        }
-
-        function calculateAgeEdit() {
-            const birthDate = new Date(document.getElementById('edit_birthdate').value);
-            const today = new Date();
-            let age = today.getFullYear() - birthDate.getFullYear();
-            const m = today.getMonth() - birthDate.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-                age--;
-            }
-            document.getElementById('edit_age').value = age;
-        }
-
-        function submitEditForm() {
-            const data = {
-                action: 'update_user_info',
-                user_id: document.getElementById('edit_user_id').value,
-                idno: document.getElementById('edit_idno').value,
-                firstname: document.getElementById('edit_firstname').value,
-                middlename: document.getElementById('edit_middlename').value,
-                lastname: document.getElementById('edit_lastname').value,
-                suffix: document.getElementById('edit_suffix').value,
-                sex: document.getElementById('edit_sex').value,
-                birthdate: document.getElementById('edit_birthdate').value,
-                age: document.getElementById('edit_age').value,
-                purokstreet: document.getElementById('edit_purokstreet').value,
-                brgy: document.getElementById('edit_brgy').value,
-                municipal: document.getElementById('edit_municipal').value,
-                province: document.getElementById('edit_province').value,
-                country: document.getElementById('edit_country').value,
-                zipcode: document.getElementById('edit_zipcode').value,
-                username: document.getElementById('edit_username').value,
-                email: document.getElementById('edit_email').value
-            };
-
-            fetch('../api/manage_users_api.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            })
-                .then(response => response.json())
-                .then(res => {
-                    if (res.success) {
-                        showToast(res.message, 'success');
-                        closeModal('editUserModal');
-                        loadUsers();
-                    } else {
-                        showToast(res.error, 'error');
-                    }
-                })
-                .catch(err => showToast('Error updating user', 'error'));
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function (event) {
-            const viewModal = document.getElementById('viewUserModal');
-            const editModal = document.getElementById('editUserModal');
-            const approveModal = document.getElementById('approveModal');
-            const deleteModal = document.getElementById('deleteModal');
-            if (event.target == viewModal) viewModal.style.display = 'none';
-            if (event.target == editModal) editModal.style.display = 'none';
-            if (event.target == approveModal) approveModal.style.display = 'none';
-            if (event.target == deleteModal) deleteModal.style.display = 'none';
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
     </script>
+</main>
+</div>
+</div>
 </body>
 
 </html>

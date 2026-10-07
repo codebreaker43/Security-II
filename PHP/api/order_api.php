@@ -13,6 +13,10 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
+// Guard: Require profile completion before accessing features
+require_once __DIR__ . '/../includes/auth_guard.php';
+enforce_profile_completion($conn, true);
+
 // Get POST data
 $data = json_decode(file_get_contents('php://input'), true);
 
@@ -34,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = mysqli_prepare($conn, $query);
 
     if ($stmt) {
-        mysqli_stmt_bind_param($stmt, "isid", $user_id, $item_name, $quantity, $total_price);
+        mysqli_stmt_bind_param($stmt, "ssid", $user_id, $item_name, $quantity, $total_price);
 
         if (mysqli_stmt_execute($stmt)) {
             echo json_encode(['success' => true, 'message' => 'Order placed successfully']);

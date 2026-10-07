@@ -4,11 +4,15 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../login.php");
     exit();
 }
-include("../db.php");
+require_once __DIR__ . '/../db.php';
+
+// Guard: Require profile completion before accessing features
+require_once __DIR__ . '/../includes/auth_guard.php';
+enforce_profile_completion($conn);
 
 // Fetch the current admin's privileges
-$current_admin_id = $_SESSION['user_id'];
-$priv_query = mysqli_query($conn, "SELECT privileges FROM user WHERE id = $current_admin_id");
+$current_admin_id = mysqli_real_escape_string($conn, $_SESSION['user_id'] ?? '');
+$priv_query = mysqli_query($conn, "SELECT privileges FROM user WHERE idno = '$current_admin_id'");
 $priv_data = mysqli_fetch_assoc($priv_query);
 $privileges_json = $priv_data['privileges'] ?? '[]';
 $privileges = json_decode($privileges_json, true) ?? [];
@@ -28,6 +32,11 @@ $filter_action   = isset($_GET['action']) ? trim($_GET['action']) : '';
 $filter_username = isset($_GET['username']) ? trim($_GET['username']) : '';
 $filter_date_from = isset($_GET['date_from']) ? trim($_GET['date_from']) : '';
 $filter_date_to   = isset($_GET['date_to']) ? trim($_GET['date_to']) : '';
+
+// --- Pagination ---
+$per_page = 15;
+$current_page = isset($_GET['page']) && is_numeric($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$offset = ($current_page - 1) * $per_page;
 
 $where_clauses = [];
 $params = [];
@@ -73,13 +82,27 @@ if (!empty($where_clauses)) {
     $where_sql = 'WHERE ' . implode(' AND ', $where_clauses);
 }
 
-$query = "SELECT * FROM audit_logs $where_sql ORDER BY timestamp DESC";
-$stmt = mysqli_prepare($conn, $query);
-
+// Count total matching rows
+$count_stmt = mysqli_prepare($conn, "SELECT COUNT(*) FROM audit_logs $where_sql");
 if (!empty($params)) {
-    mysqli_stmt_bind_param($stmt, $types, ...$params);
+    mysqli_stmt_bind_param($count_stmt, $types, ...$params);
 }
+mysqli_stmt_execute($count_stmt);
+mysqli_stmt_bind_result($count_stmt, $total_logs);
+mysqli_stmt_fetch($count_stmt);
+mysqli_stmt_close($count_stmt);
+$total_pages = max(1, (int)ceil($total_logs / $per_page));
+if ($current_page > $total_pages) $current_page = $total_pages;
+$offset = ($current_page - 1) * $per_page;
 
+// Paginated query
+$query = "SELECT * FROM audit_logs $where_sql ORDER BY timestamp DESC LIMIT ? OFFSET ?";
+$stmt = mysqli_prepare($conn, $query);
+$paginated_params = $params;
+$paginated_types  = $types . 'ii';
+$paginated_params[] = $per_page;
+$paginated_params[] = $offset;
+mysqli_stmt_bind_param($stmt, $paginated_types, ...$paginated_params);
 mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
 $logs = mysqli_fetch_all($result, MYSQLI_ASSOC);
@@ -149,46 +172,45 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audit Logs - Super Admin</title>
+    <title>Audit Logs - ONE PIECE Admin</title>
     <link rel="stylesheet" href="../../css/style.css">
     <style>
         body {
             background-image:
-                linear-gradient(rgba(10, 12, 18, 0.88), rgba(10, 12, 18, 0.92)),
-                url('../../img/moto-bg.jpg');
+                linear-gradient(rgba(240, 245, 255, 0.65), rgba(248, 250, 252, 0.80)),
+                url('../../img/one_piece_bg.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
         }
 
-        /* Professional Theme */
         h1 {
-            font-size: 2.8rem;
+            font-size: 2.5rem;
             font-weight: 700;
-            color: #ffffff;
+            color: #0f172a;
             margin-bottom: 0.5rem;
             letter-spacing: -0.5px;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
         }
 
         /* ---- Filter Bar ---- */
         .filter-bar {
-            background: rgba(20, 30, 45, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(245, 158, 11, 0.35);
             border-radius: 16px;
             padding: 1.25rem 1.5rem;
             margin-bottom: 1rem;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 0 15px rgba(245, 158, 11, 0.1);
         }
 
         .filter-bar-title {
             font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 1.5px;
-            color: var(--text-muted);
+            color: #d97706;
             margin-bottom: 0.85rem;
-            font-weight: 600;
+            font-weight: 700;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -197,7 +219,7 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
         .filter-bar-title svg {
             width: 14px;
             height: 14px;
-            opacity: 0.7;
+            opacity: 0.9;
         }
 
         .filter-row {
@@ -217,8 +239,8 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
 
         .filter-group label {
             font-size: 0.75rem;
-            color: var(--text-muted);
-            font-weight: 500;
+            color: #475569;
+            font-weight: 600;
             letter-spacing: 0.5px;
         }
 
@@ -227,33 +249,34 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
         .filter-group input[type="date"] {
             width: 100%;
             padding: 0.6rem 0.85rem;
-            background: rgba(0, 0, 0, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
             border-radius: 8px;
-            color: var(--text-color);
+            color: #0f172a;
             font-size: 0.85rem;
             font-family: inherit;
             transition: all 0.25s ease;
             outline: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
         .filter-group select:hover,
         .filter-group input[type="text"]:hover,
         .filter-group input[type="date"]:hover {
-            border-color: rgba(255, 255, 255, 0.2);
+            border-color: #f59e0b;
         }
 
         .filter-group select:focus,
         .filter-group input[type="text"]:focus,
         .filter-group input[type="date"]:focus {
-            border-color: var(--accent-blue);
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
-            background: rgba(0, 0, 0, 0.5);
+            border-color: #d97706;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+            background: #ffffff;
         }
 
         .filter-group select option {
-            background: #0d1117;
-            color: #e6edf3;
+            background: #ffffff;
+            color: #0f172a;
         }
 
         .filter-actions {
@@ -279,33 +302,33 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
         }
 
         .btn-filter-apply {
-            background: linear-gradient(135deg, var(--accent-blue), #0056b3);
+            background: linear-gradient(135deg, #d97706, #b45309);
             color: white;
-            box-shadow: 0 2px 10px rgba(0, 123, 255, 0.25);
+            box-shadow: 0 2px 10px rgba(217, 119, 6, 0.25);
         }
 
         .btn-filter-apply:hover {
             transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+            box-shadow: 0 4px 15px rgba(217, 119, 6, 0.4);
         }
 
         .btn-filter-clear {
-            background: rgba(255, 255, 255, 0.06);
-            color: var(--text-muted);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
         }
 
         .btn-filter-clear:hover {
-            background: rgba(255, 59, 59, 0.15);
-            color: var(--accent-red);
-            border-color: rgba(255, 59, 59, 0.3);
+            background: #fee2e2;
+            color: #dc2626;
+            border-color: #fca5a5;
         }
 
         .active-filters-badge {
             display: inline-flex;
             align-items: center;
-            background: rgba(0, 123, 255, 0.15);
-            color: var(--accent-blue);
+            background: rgba(245, 158, 11, 0.15);
+            color: #d97706;
             font-size: 0.7rem;
             font-weight: 700;
             padding: 0.15rem 0.5rem;
@@ -316,26 +339,26 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
 
         .results-count {
             font-size: 0.8rem;
-            color: var(--text-muted);
+            color: #64748b;
             margin-top: 0.75rem;
             padding-top: 0.65rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-top: 1px solid #e2e8f0;
         }
 
         .results-count strong {
-            color: var(--text-color);
+            color: #0f172a;
         }
 
         /* ---- Table ---- */
         .table-container {
             width: 100%;
             margin-top: 1rem;
-            background: rgba(20, 30, 45, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(245, 158, 11, 0.35);
             border-radius: 16px;
             padding: 1.5rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 0 15px rgba(245, 158, 11, 0.1);
             margin-bottom: 2rem;
             overflow-x: auto;
         }
@@ -350,91 +373,124 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
         table {
             width: 100%;
             border-collapse: collapse;
-            color: var(--text-color);
+            color: #0f172a;
             table-layout: auto;
         }
 
         th {
-            background: rgba(0, 0, 0, 0.8);
-            font-weight: 700;
-            color: white !important;
+            background: rgba(254, 243, 199, 0.75) !important;
+            font-weight: 800;
+            color: #78350f !important;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 4px solid #050505 !important;
-        }
-
-        /* Colored headers for Professional theme */
-        th {
-            border-top: 4px solid var(--accent-blue) !important;
+            letter-spacing: 0.75px;
+            border-top: 3px solid #f59e0b !important;
+            border-bottom: 2px solid #fde68a !important;
         }
 
         th,
         td {
-            padding: 1.2rem 1rem;
+            padding: 1.1rem 1rem;
             text-align: left;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            font-size: 0.9rem;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.88rem;
         }
 
         tr:nth-child(even) {
-            background: rgba(255, 255, 255, 0.02);
+            background: rgba(248, 250, 252, 0.6);
         }
 
         tr:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(254, 243, 199, 0.3);
         }
 
         .role-superadmin {
-            color: var(--accent-blue);
-            font-weight: bold;
+            color: #b91c1c;
+            font-weight: 800;
         }
 
         .role-admin {
-            color: #4facfe;
-            font-weight: bold;
+            color: #0284c7;
+            font-weight: 700;
         }
 
         .role-user {
-            color: var(--text-color);
+            color: #475569;
+            font-weight: 600;
         }
 
         .action-login {
-            color: var(--accent-green);
-            font-weight: bold;
-            text-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
+            color: #15803d;
+            font-weight: 700;
         }
 
         .action-logout {
-            color: var(--accent-orange);
-            font-weight: bold;
+            color: #b45309;
+            font-weight: 700;
         }
 
         .action-other {
-            color: var(--accent-blue);
+            color: #0284c7;
+            font-weight: 600;
         }
 
+        /* ---- Pagination ---- */
         .pagination {
             display: flex;
-            justify-content: flex-end;
-            margin-top: 1rem;
-            gap: 0.5rem;
+            justify-content: center;
+            align-items: center;
+            margin-top: 1.5rem;
+            gap: 0.4rem;
+            flex-wrap: wrap;
         }
 
-        .pagination a {
-            padding: 0.6rem 1.2rem;
-            background: rgba(0, 0, 0, 0.4);
-            border: 2px solid rgba(255, 255, 255, 0.1);
+        .pagination a,
+        .pagination span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2.4rem;
+            height: 2.4rem;
+            padding: 0 0.75rem;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
             border-radius: 8px;
-            color: white;
-            font-weight: bold;
+            color: #0f172a;
+            font-size: 0.875rem;
+            font-weight: 600;
             text-decoration: none;
-            transition: all 0.3s;
+            transition: all 0.2s ease;
+            white-space: nowrap;
         }
 
         .pagination a:hover {
-            background: var(--accent-blue);
-            border-color: var(--accent-blue);
-            box-shadow: 0 0 10px rgba(0, 123, 255, 0.4);
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #92400e;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+        }
+
+        .pagination a.active {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            border-color: #d97706;
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35);
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .pagination span.dots {
+            border-color: transparent;
+            background: transparent;
+            color: #94a3b8;
+            cursor: default;
+        }
+
+        .pagination-info {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 0.6rem;
         }
 
         @media (max-width: 768px) {
@@ -457,35 +513,19 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
 </head>
 
 <body>
-    <nav class="navbar">
-        <div class="navdiv">
-            <div class="logo">
-                <a href="dashboard.php" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff5500" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="18.5" cy="17.5" r="3.5"/>
-                        <circle cx="5.5" cy="17.5" r="3.5"/>
-                        <circle cx="15" cy="5" r="1"/>
-                        <path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
-                    </svg>
-                    <span style="font-weight: 800; color: #ffffff; letter-spacing: 0.5px;">ADMIN <span style="color: var(--accent-orange, #ff5500);">PANEL</span></span>
-                </a>
-            </div>
-            <ul>
-                <li><a href="dashboard.php">Dashboard</a></li>
-                <?php if ($can_view_users): ?>
-                <li><a href="manage_users.php">Manage Users</a></li>
-                <?php endif; ?>
-                <li><a href="audit_logs.php" style="color: var(--accent-blue);">Audit Logs</a></li>
-                <button onclick="location.href='../logout.php'">Logout</button>
-            </ul>
-        </div>
-    </nav>
+    <div class="app-layout">
+        <?php
+        include_once __DIR__ . '/../includes/sidebar.php';
+        render_sidebar('audit_logs');
+        ?>
 
+        <div class="app-main">
+            <main class="main-content">
     <div class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <div>
                 <h1>System Audit Logs</h1>
-                <p>Tracking user authentication and system activities.</p>
+                <p style="color: #64748b; margin: 0; font-size: 0.95rem;">Tracking user authentication and system activities.</p>
             </div>
         </div>
 
@@ -552,15 +592,17 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
                     </div>
                 </div>
                 <?php
-                    // Count visible rows
                     $visible_count = 0;
                     foreach ($final_logs as $row) {
                         if (isset($row['skip_render']) && $row['skip_render']) continue;
                         $visible_count++;
                     }
+                    $range_start = $total_logs > 0 ? $offset + 1 : 0;
+                    $range_end   = min($offset + $per_page, $total_logs);
                 ?>
                 <div class="results-count">
-                    Showing <strong><?php echo $visible_count; ?></strong> log entries
+                    Showing <strong><?php echo $range_start; ?>&ndash;<?php echo $range_end; ?></strong>
+                    of <strong><?php echo $total_logs; ?></strong> log entries
                     <?php if ($has_filters): ?> (filtered)<?php endif; ?>
                 </div>
             </form>
@@ -643,6 +685,70 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
                     </tbody>
                 </table>
             </div>
+
+            <?php
+            // Build base query string (preserve filters, strip page)
+            $query_params = array_filter([
+                'role'      => $filter_role,
+                'action'    => $filter_action,
+                'username'  => $filter_username,
+                'date_from' => $filter_date_from,
+                'date_to'   => $filter_date_to,
+            ]);
+
+            if (!function_exists('pagLink')) {
+                function pagLink($query_params, $p, $label, $isCurrent = false, $isDots = false) {
+                    if ($isDots) return "<span class='dots'>$label</span>";
+                    $cls = $isCurrent ? ' class="active"' : '';
+                    $params = $query_params;
+                    $params['page'] = $p;
+                    $url = 'audit_logs.php?' . http_build_query($params);
+                    return "<a href='{$url}'{$cls}>{$label}</a>";
+                }
+            }
+
+            if ($total_pages > 1):
+            ?>
+            <div class="pagination">
+                <?php
+                // Prev button
+                if ($current_page > 1) {
+                    echo pagLink($query_params, $current_page - 1, '&laquo; Prev');
+                } else {
+                    echo '<span style="opacity:0.35;pointer-events:none">&laquo; Prev</span>';
+                }
+
+                // Page number range with ellipsis
+                $window = 2;
+                $pages_to_show = [];
+                for ($p = 1; $p <= $total_pages; $p++) {
+                    if ($p === 1 || $p === $total_pages ||
+                        ($p >= $current_page - $window && $p <= $current_page + $window)) {
+                        $pages_to_show[] = $p;
+                    }
+                }
+
+                $prev_p = null;
+                foreach ($pages_to_show as $p) {
+                    if ($prev_p !== null && $p - $prev_p > 1) {
+                        echo pagLink($query_params, 0, '&hellip;', false, true);
+                    }
+                    echo pagLink($query_params, $p, $p, $p === $current_page);
+                    $prev_p = $p;
+                }
+
+                // Next button
+                if ($current_page < $total_pages) {
+                    echo pagLink($query_params, $current_page + 1, 'Next &raquo;');
+                } else {
+                    echo '<span style="opacity:0.35;pointer-events:none">Next &raquo;</span>';
+                }
+                ?>
+            </div>
+            <div class="pagination-info">Page <?php echo $current_page; ?> of <?php echo $total_pages; ?></div>
+            <?php endif; ?>
+        </div>
+            </main>
         </div>
     </div>
 

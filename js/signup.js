@@ -44,8 +44,12 @@ function isValidDate(dateString) {
 }
 
 function isValidEmail(email) {
-    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    var emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) return false;
+    var domain = (email.trim().toLowerCase().split('@')[1] || '');
+    var isGmail = (domain === 'gmail.com');
+    var isUniversity = /(^|\.)[a-z0-9-]+\.edu\.ph$/.test(domain) || /(^|\.)[a-z0-9-]+\.edu$/.test(domain);
+    return isGmail || isUniversity;
 }
 
 function calculateAge() {
@@ -76,9 +80,24 @@ function toggleCustomSuffix() {
 }
 
 function strongpassword(password) {
+    var pswrdEl = document.getElementById("pswrd");
+    var bars = [
+        document.getElementById("bar1"),
+        document.getElementById("bar2"),
+        document.getElementById("bar3"),
+        document.getElementById("bar4")
+    ];
+    var strengthLabel = document.getElementById("strengthLabel");
+
     if (!password || password.length === 0) {
-        var pswrdEl = document.getElementById("pswrd");
         if (pswrdEl) pswrdEl.innerHTML = "";
+        bars.forEach(function(b) {
+            if (b) b.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+        });
+        if (strengthLabel) {
+            strengthLabel.textContent = "";
+            strengthLabel.style.color = "var(--text-muted)";
+        }
         return;
     }
   
@@ -96,25 +115,77 @@ function strongpassword(password) {
     switch (alt) {
         case 0:
         case 1:
+            level = "Weak password";
+            color = "#ef4444";
+            break;
         case 2:
             level = "Weak password";
-            color = "Orange";
+            color = "#f97316";
             break;
         case 3:
             level = "Medium password";
-            color = "Yellow";
+            color = "#f59e0b";
             break;
         case 4:
             level = "Strong password";
-            color = "LightGreen";
+            color = "#10b981";
             break;
     }
   
-    var pswrdEl = document.getElementById("pswrd");
+    bars.forEach(function(b, idx) {
+        if (b) {
+            if (idx < alt) {
+                b.style.backgroundColor = color;
+            } else {
+                b.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+            }
+        }
+    });
+
+    if (strengthLabel) {
+        strengthLabel.textContent = level;
+        strengthLabel.style.color = color;
+    }
+
     if (pswrdEl) {
         pswrdEl.innerHTML = level;
         pswrdEl.style.color = color;
     }
+}
+
+function initRegPasswordToggles() {
+    var togglePass = document.getElementById('toggleRegPass');
+    var passInput = document.getElementById('password');
+    var toggleConfirm = document.getElementById('toggleRegConfirmPass');
+    var confirmInput = document.getElementById('confirmPassword');
+
+    var eyeOpen = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+    var eyeClosed = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+
+    function setupToggle(btn, input) {
+        if (btn && input && !btn.dataset.toggleBound) {
+            btn.dataset.toggleBound = 'true';
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + eyeClosed + '</svg>';
+                } else {
+                    input.type = 'password';
+                    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + eyeOpen + '</svg>';
+                }
+            });
+        }
+    }
+
+    setupToggle(togglePass, passInput);
+    setupToggle(toggleConfirm, confirmInput);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initRegPasswordToggles);
+} else {
+    initRegPasswordToggles();
 }
 
 // ---------------- Left-to-Right Name Field Scanner ---------------- //
@@ -649,7 +720,7 @@ function checkZipcode(showEmpty) {
 function checkEmail(showEmpty) {
     var el = document.getElementById("email");
     if (!el) return true;
-    var val = el.value;
+    var val = el.value.trim();
     if (val === "") {
         if (showEmpty) {
             setFieldError("email", "Email cannot be blank.");
@@ -678,12 +749,8 @@ function checkEmail(showEmpty) {
                 return false;
             }
         }
-        if (i === 0 && /[0-9]/.test(char) && /[A-Za-z]/.test(val)) {
-            setFieldError("email", "Email cannot start with a number followed by letters.");
-            return false;
-        }
-        if (/[^a-zA-Z0-9@.\s]/.test(char)) {
-            setFieldError("email", "Email can only contain letters, numbers, '@', and '.'.");
+        if (/[^a-zA-Z0-9@._-]/.test(char)) {
+            setFieldError("email", "Email can only contain letters, numbers, '@', '.', '-', and '_'.");
             return false;
         }
     }
@@ -691,6 +758,19 @@ function checkEmail(showEmpty) {
         setFieldError("email", "Email must contain an '@' symbol.");
         return false;
     }
+
+    var parts = val.toLowerCase().split('@');
+    if (parts.length === 2 && parts[1]) {
+        var domain = parts[1];
+        var isGmail = (domain === 'gmail.com');
+        var isUniversity = /(^|\.)[a-z0-9-]+\.edu\.ph$/.test(domain) || /(^|\.)[a-z0-9-]+\.edu$/.test(domain);
+
+        if (!isGmail && !isUniversity) {
+            setFieldError("email", "Only Gmail (@gmail.com) and university email (@...edu.ph / @...edu) are allowed.");
+            return false;
+        }
+    }
+
     if (!isValidEmail(val)) {
         setFieldError("email", "Please enter a valid email address.");
         return false;
@@ -850,6 +930,30 @@ function checkConfirmPassword(showEmpty) {
     return true;
 }
 
+function checkDistinctSecurityQuestions(showEmpty) {
+    var q1 = document.getElementById("security_question1");
+    var q2 = document.getElementById("security_question2");
+    var q3 = document.getElementById("security_question3");
+    if (!q1 || !q2 || !q3) return true;
+    var v1 = q1.value;
+    var v2 = q2.value;
+    var v3 = q3.value;
+
+    if (v1 && v2 && v1 === v2) {
+        if (showEmpty) setFieldError("security_answer2", "Question 2 must be different from Question 1.");
+        return false;
+    }
+    if (v1 && v3 && v1 === v3) {
+        if (showEmpty) setFieldError("security_answer3", "Question 3 must be different from Question 1.");
+        return false;
+    }
+    if (v2 && v3 && v2 === v3) {
+        if (showEmpty) setFieldError("security_answer3", "Question 3 must be different from Question 2.");
+        return false;
+    }
+    return true;
+}
+
 function checkSecurityAnswer(num, showEmpty) {
     var qEl = document.getElementById("security_question" + num);
     var aEl = document.getElementById("security_answer" + num);
@@ -857,13 +961,32 @@ function checkSecurityAnswer(num, showEmpty) {
     var qVal = qEl.value;
     var aVal = aEl.value.trim();
 
-    if (qVal === "" || aVal === "") {
+    if (qVal === "") {
         if (showEmpty) {
-            setFieldError("security_answer" + num, "Please select Question " + num + " and provide an answer.");
+            setFieldError("security_answer" + num, "Please select Question " + num + ".");
+            return false;
+        }
+        clearSingleFieldError("security_answer" + num);
+        return false;
+    }
+
+    if (aVal === "") {
+        if (showEmpty) {
+            setFieldError("security_answer" + num, "Please provide an answer for Question " + num + ".");
+            return false;
+        }
+        clearSingleFieldError("security_answer" + num);
+        return false;
+    }
+
+    if (aVal.length < 2) {
+        if (showEmpty) {
+            setFieldError("security_answer" + num, "Answer for Question " + num + " must be at least 2 characters.");
             return false;
         }
         return false;
     }
+
     clearSingleFieldError("security_answer" + num);
     return true;
 }
@@ -916,6 +1039,7 @@ function validateStep3() {
     var vSq1 = checkSecurityAnswer(1, true);
     var vSq2 = checkSecurityAnswer(2, true);
     var vSq3 = checkSecurityAnswer(3, true);
+    var vDistinct = checkDistinctSecurityQuestions(true);
 
     if (!vEm) { document.getElementById("email").focus(); return false; }
     if (!vUn) { document.getElementById("username").focus(); return false; }
@@ -924,6 +1048,7 @@ function validateStep3() {
     if (!vSq1) { document.getElementById("security_answer1").focus(); return false; }
     if (!vSq2) { document.getElementById("security_answer2").focus(); return false; }
     if (!vSq3) { document.getElementById("security_answer3").focus(); return false; }
+    if (!vDistinct) { return false; }
 
     // Check for error messages left by async duplicate checks
     var emailErr = document.getElementById("email_error");
@@ -939,7 +1064,27 @@ function validateStep3() {
 }
 
 function validateform() {
-    return validateStep1() && validateStep2() && validateStep3();
+    if (!validateStep1()) {
+        document.getElementById('step2').style.display = 'none';
+        document.getElementById('step3').style.display = 'none';
+        document.getElementById('step1').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return false;
+    }
+    if (!validateStep2()) {
+        document.getElementById('step1').style.display = 'none';
+        document.getElementById('step3').style.display = 'none';
+        document.getElementById('step2').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return false;
+    }
+    if (!validateStep3()) {
+        document.getElementById('step1').style.display = 'none';
+        document.getElementById('step2').style.display = 'none';
+        document.getElementById('step3').style.display = 'block';
+        return false;
+    }
+    return true;
 }
 
 // ---------------- Initialize Live Input Listeners ---------------- //
@@ -1073,7 +1218,10 @@ document.addEventListener('DOMContentLoaded', function () {
         (function (num) {
             var q = document.getElementById("security_question" + num);
             var a = document.getElementById("security_answer" + num);
-            if (q) q.addEventListener("change", function () { checkSecurityAnswer(num, false); });
+            if (q) q.addEventListener("change", function () {
+                checkSecurityAnswer(num, false);
+                checkDistinctSecurityQuestions(true);
+            });
             if (a) a.addEventListener("input", function () { checkSecurityAnswer(num, false); });
         })(s);
     }

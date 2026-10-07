@@ -4,6 +4,7 @@ include(__DIR__ . '/../db.php');
 
 $field = isset($_GET['field']) ? trim($_GET['field']) : '';
 $value = isset($_GET['value']) ? trim($_GET['value']) : '';
+$exclude_id = isset($_GET['exclude_id']) ? trim($_GET['exclude_id']) : '';
 
 if (empty($field) || empty($value)) {
     echo json_encode(['exists' => false]);
@@ -17,7 +18,13 @@ if (!in_array($field, $allowed_fields)) {
 }
 
 $safe_value = mysqli_real_escape_string($conn, $value);
-$result = mysqli_query($conn, "SELECT id FROM user WHERE `$field` = '$safe_value' LIMIT 1");
+$exclude_sql = "";
+if (!empty($exclude_id)) {
+    $safe_exclude = mysqli_real_escape_string($conn, $exclude_id);
+    $exclude_sql = " AND idno != '$safe_exclude'";
+}
+
+$result = mysqli_query($conn, "SELECT idno FROM user WHERE `$field` = '$safe_value' $exclude_sql LIMIT 1");
 
 if ($result && mysqli_num_rows($result) > 0) {
     echo json_encode(['exists' => true]);
