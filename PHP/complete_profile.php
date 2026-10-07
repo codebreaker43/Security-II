@@ -349,9 +349,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <style>
         :root {
             --dark-bg: #0b1120;
-            --card-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.08) 100%);
-            --input-bg: rgba(255, 255, 255, 0.15);
-            --input-border: rgba(255, 255, 255, 0.35);
+            --card-bg: linear-gradient(145deg, rgba(15, 23, 42, 0.94) 0%, rgba(24, 34, 53, 0.92) 100%);
+            --input-bg: rgba(8, 12, 22, 0.75);
+            --input-border: rgba(255, 255, 255, 0.25);
             --input-border-focus: #fbbf24;
             --accent-gold: #fbbf24;
             --accent-gold-glow: rgba(245, 158, 11, 0.35);
@@ -359,7 +359,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             --accent-orange: #f97316;
             --text-main: #ffffff;
             --text-muted: #cbd5e1;
-            --text-label: #f1f5f9;
+            --text-label: #fbbf24;
             --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             --font-heading: 'Outfit', sans-serif;
         }
@@ -509,12 +509,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: var(--card-bg);
             backdrop-filter: blur(25px) saturate(180%);
             -webkit-backdrop-filter: blur(25px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.35);
+            border: 1px solid rgba(245, 158, 11, 0.4);
             border-radius: 14px;
             padding: 1.15rem 1.85rem;
             width: 100%;
             max-width: 860px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55), 0 0 35px rgba(245, 158, 11, 0.12);
             position: relative;
         }
 
@@ -654,13 +654,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: flex;
             align-items: center;
             gap: 0.3rem;
-            font-size: 0.69rem;
+            font-size: 0.78rem;
             font-weight: 700;
-            color: var(--text-label);
+            color: #fbbf24;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 0.18rem;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+            margin-bottom: 0.25rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
         }
 
         .req-star {
@@ -669,9 +669,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .label-hint {
-            font-size: 0.68rem;
+            font-size: 0.74rem;
             font-weight: 500;
-            color: var(--text-muted);
+            color: #cbd5e1;
             text-transform: none;
             letter-spacing: normal;
         }
@@ -680,44 +680,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .input-control,
         select.input-control {
             width: 100%;
-            height: 36px;
-            background: rgba(255, 255, 255, 0.15);
+            height: 38px;
+            background: rgba(8, 12, 22, 0.75);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
             border-radius: 7px;
             padding: 0 0.85rem;
-            color: #ffffff;
+            color: #ffffff !important;
             font-family: var(--font-main);
-            font-size: 0.86rem;
+            font-size: 0.90rem;
             font-weight: 600;
             transition: all 0.2s ease;
             box-sizing: border-box;
             outline: none;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .input-control::placeholder {
-            color: #cbd5e1;
-            font-weight: 400;
+            color: #94a3b8 !important;
+            font-weight: 500;
         }
 
         .input-control:focus,
         select.input-control:focus {
-            border-color: #fbbf24;
-            box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
-            background: rgba(255, 255, 255, 0.25);
-            color: #ffffff;
+            border-color: #fbbf24 !important;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35) !important;
+            background: rgba(15, 23, 42, 0.95) !important;
+            color: #ffffff !important;
+        }
+
+        /* Autofill High Contrast Fix */
+        .input-control:-webkit-autofill,
+        .input-control:-webkit-autofill:hover, 
+        .input-control:-webkit-autofill:focus, 
+        .input-control:-webkit-autofill:active,
+        select.input-control:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 1000px #090d16 inset !important;
+            -webkit-text-fill-color: #ffffff !important;
+            caret-color: #ffffff !important;
+            transition: background-color 5000s ease-in-out 0s;
         }
 
         /* Readonly ID NO & Age */
         .input-idno {
             color: #38bdf8 !important;
             font-weight: 800 !important;
+            font-size: 0.92rem !important;
             letter-spacing: 1px;
-            background: rgba(255, 255, 255, 0.08) !important;
+            background: rgba(8, 12, 22, 0.90) !important;
             cursor: not-allowed;
-            border-color: rgba(255, 255, 255, 0.2) !important;
+            border-color: rgba(56, 189, 248, 0.45) !important;
         }
 
         .age-input-wrapper {
@@ -728,9 +741,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .age-input-wrapper .input-control {
             padding-right: 3.2rem;
-            background: rgba(255, 255, 255, 0.08) !important;
+            background: rgba(8, 12, 22, 0.90) !important;
             cursor: not-allowed;
-            color: #ffffff;
+            color: #ffffff !important;
             font-weight: 600;
             border-color: rgba(255, 255, 255, 0.2) !important;
         }
@@ -759,9 +772,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         select.input-control option {
-            background-color: #0f172a;
-            color: #ffffff;
-            padding: 0.4rem;
+            background-color: #0f172a !important;
+            color: #ffffff !important;
+            font-weight: 600;
+            padding: 8px 12px;
         }
 
         /* Date input icon */

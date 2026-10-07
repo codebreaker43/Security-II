@@ -347,13 +347,13 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             --accent-orange-hover: #ea580c;
             --accent-orange-glow: rgba(234, 88, 12, 0.35);
             --dark-bg: #0b1120;
-            --card-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.08) 100%);
-            --input-bg: rgba(255, 255, 255, 0.15);
-            --input-border: rgba(255, 255, 255, 0.35);
+            --card-bg: linear-gradient(145deg, rgba(15, 23, 42, 0.94) 0%, rgba(24, 34, 53, 0.92) 100%);
+            --input-bg: rgba(8, 12, 22, 0.75);
+            --input-border: rgba(255, 255, 255, 0.25);
             --input-border-focus: #fbbf24;
             --text-main: #ffffff;
             --text-muted: #cbd5e1;
-            --text-label: #f1f5f9;
+            --text-label: #fbbf24;
             --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             --font-heading: 'Outfit', sans-serif;
         }
@@ -508,12 +508,12 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             background: var(--card-bg);
             backdrop-filter: blur(25px) saturate(180%);
             -webkit-backdrop-filter: blur(25px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.35);
+            border: 1px solid rgba(245, 158, 11, 0.4);
             border-radius: 16px;
             padding: 1.5rem 2.25rem;
             width: 100%;
             max-width: 900px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55), 0 0 35px rgba(245, 158, 11, 0.12);
             position: relative;
         }
 
@@ -550,12 +550,12 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             color: #ffffff;
             letter-spacing: 0.5px;
             line-height: 1.1;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
         }
 
         .form-subtitle {
             color: #cbd5e1;
-            font-size: 0.85rem;
+            font-size: 0.88rem;
             margin-left: calc(5px + 0.85rem);
             font-weight: 500;
         }
@@ -620,13 +620,13 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             display: flex;
             align-items: center;
             gap: 0.35rem;
-            font-size: 0.73rem;
+            font-size: 0.80rem;
             font-weight: 700;
-            color: #f1f5f9;
+            color: #fbbf24;
             text-transform: uppercase;
             letter-spacing: 0.6px;
-            margin-bottom: 0.3rem;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+            margin-bottom: 0.35rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
         }
 
         .req-star {
@@ -635,7 +635,7 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
         }
 
         .label-hint {
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             font-weight: 500;
             color: #cbd5e1;
             text-transform: none;
@@ -646,44 +646,57 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
         .input-control,
         select.input-control {
             width: 100%;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.15);
+            height: 42px;
+            background: rgba(8, 12, 22, 0.75);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
             border-radius: 8px;
-            padding: 0 0.9rem;
-            color: #ffffff;
+            padding: 0 0.95rem;
+            color: #ffffff !important;
             font-family: var(--font-main);
-            font-size: 0.9rem;
+            font-size: 0.93rem;
             font-weight: 600;
             transition: all 0.2s ease;
             box-sizing: border-box;
             outline: none;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .input-control::placeholder {
-            color: #cbd5e1;
-            font-weight: 400;
+            color: #94a3b8 !important;
+            font-weight: 500;
         }
 
         .input-control:focus,
         select.input-control:focus {
-            border-color: #fbbf24;
-            box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
-            background: rgba(255, 255, 255, 0.25);
-            color: #ffffff;
+            border-color: #fbbf24 !important;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35) !important;
+            background: rgba(15, 23, 42, 0.95) !important;
+            color: #ffffff !important;
+        }
+
+        /* Autofill High Contrast Fix */
+        .input-control:-webkit-autofill,
+        .input-control:-webkit-autofill:hover, 
+        .input-control:-webkit-autofill:focus, 
+        .input-control:-webkit-autofill:active,
+        select.input-control:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 1000px #090d16 inset !important;
+            -webkit-text-fill-color: #ffffff !important;
+            caret-color: #ffffff !important;
+            transition: background-color 5000s ease-in-out 0s;
         }
 
         /* Readonly ID NO & Age */
         .input-idno {
             color: #38bdf8 !important;
             font-weight: 800 !important;
+            font-size: 0.95rem !important;
             letter-spacing: 1px;
-            background: rgba(255, 255, 255, 0.08) !important;
+            background: rgba(8, 12, 22, 0.90) !important;
             cursor: not-allowed;
-            border-color: rgba(255, 255, 255, 0.2) !important;
+            border-color: rgba(56, 189, 248, 0.45) !important;
         }
 
         .age-input-wrapper {
@@ -694,9 +707,9 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
 
         .age-input-wrapper .input-control {
             padding-right: 3.5rem;
-            background: rgba(255, 255, 255, 0.08) !important;
+            background: rgba(8, 12, 22, 0.90) !important;
             cursor: not-allowed;
-            color: #ffffff;
+            color: #ffffff !important;
             font-weight: 600;
             border-color: rgba(255, 255, 255, 0.2) !important;
         }
@@ -725,9 +738,10 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
         }
 
         select.input-control option {
-            background-color: #0f172a;
-            color: #ffffff;
-            padding: 0.5rem;
+            background-color: #0f172a !important;
+            color: #ffffff !important;
+            font-weight: 600;
+            padding: 8px 12px;
         }
 
         /* Date input icon */

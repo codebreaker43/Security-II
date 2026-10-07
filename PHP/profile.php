@@ -78,13 +78,13 @@ if (!$is_profile_complete) {
         }
 
         .details-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.08) 100%);
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.92) 0%, rgba(24, 34, 53, 0.90) 100%);
             backdrop-filter: blur(25px) saturate(180%);
             -webkit-backdrop-filter: blur(25px) saturate(180%);
             border-radius: 16px;
             padding: 1.25rem 1.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.35);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55), 0 0 35px rgba(245, 158, 11, 0.12);
             position: relative;
             max-height: calc(100vh - 3rem);
             overflow-y: auto;
@@ -114,49 +114,57 @@ if (!$is_profile_complete) {
 
         .profile-input {
             width: 100%;
-            padding: 0.55rem 0.85rem;
-            background: rgba(255, 255, 255, 0.15);
+            padding: 0.65rem 0.95rem;
+            background: rgba(8, 12, 22, 0.75);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
             border-radius: 8px;
-            color: #ffffff;
-            font-size: 0.88rem;
+            color: #ffffff !important;
+            font-size: 0.92rem;
             font-weight: 600;
             box-sizing: border-box;
             outline: none;
             transition: all 0.25s ease;
         }
 
+        .profile-input::placeholder,
+        .modal-form-input::placeholder {
+            color: #94a3b8 !important;
+            font-weight: 500;
+        }
+
         .profile-input:focus {
-            border-color: #fbbf24;
-            background: rgba(255, 255, 255, 0.28);
-            box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
-            color: #ffffff;
+            border-color: #fbbf24 !important;
+            background: rgba(15, 23, 42, 0.95) !important;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35) !important;
+            color: #ffffff !important;
         }
 
         .profile-input:read-only {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.2);
-            color: #f1f5f9;
+            background: rgba(8, 12, 22, 0.55) !important;
+            border-color: rgba(255, 255, 255, 0.18) !important;
+            color: #f8fafc !important;
             cursor: default;
         }
 
         select.profile-select option {
-            background: #0f172a;
-            color: #ffffff;
+            background: #0f172a !important;
+            color: #ffffff !important;
+            font-weight: 600;
+            padding: 8px 12px;
         }
 
         .modal-form-input {
             width: 100%;
-            padding: 0.6rem 0.85rem;
-            background: rgba(255, 255, 255, 0.15);
+            padding: 0.65rem 0.95rem;
+            background: rgba(8, 12, 22, 0.75);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
             border-radius: 8px;
-            color: #ffffff;
-            font-size: 0.88rem;
+            color: #ffffff !important;
+            font-size: 0.92rem;
             font-weight: 600;
             box-sizing: border-box;
             outline: none;
@@ -164,15 +172,28 @@ if (!$is_profile_complete) {
         }
 
         .modal-form-input:focus {
-            border-color: #fbbf24;
-            background: rgba(255, 255, 255, 0.28);
-            box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
+            border-color: #fbbf24 !important;
+            background: rgba(15, 23, 42, 0.95) !important;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35) !important;
+            color: #ffffff !important;
+        }
+
+        /* Autofill High Contrast Fix */
+        .profile-input:-webkit-autofill,
+        .profile-input:-webkit-autofill:hover, 
+        .profile-input:-webkit-autofill:focus, 
+        .profile-input:-webkit-autofill:active,
+        .modal-form-input:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 1000px #090d16 inset !important;
+            -webkit-text-fill-color: #ffffff !important;
+            caret-color: #ffffff !important;
+            transition: background-color 5000s ease-in-out 0s;
         }
 
         /* Real-time Field Error Messages */
         .error-msg {
             color: #f87171;
-            font-size: 0.72rem;
+            font-size: 0.74rem;
             font-weight: 600;
             display: none;
             margin-top: 3px;
@@ -193,23 +214,23 @@ if (!$is_profile_complete) {
 
         .profile-label {
             display: block;
-            color: #e2e8f0;
-            font-size: 0.72rem;
-            margin-bottom: 0.25rem;
+            color: #fbbf24;
+            font-size: 0.80rem;
+            margin-bottom: 0.3rem;
             text-transform: uppercase;
             letter-spacing: 0.6px;
             font-weight: 700;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
         }
 
         .info-group {
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(8, 12, 22, 0.65);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            padding: 0.55rem 0.75rem;
+            padding: 0.6rem 0.85rem;
             border-radius: 8px;
             margin-bottom: 0.4rem;
-            border: 1px solid rgba(255, 255, 255, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.18);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -217,8 +238,8 @@ if (!$is_profile_complete) {
 
         .info-group .profile-label {
             margin-bottom: 0;
-            font-size: 0.7rem;
-            color: #cbd5e1;
+            font-size: 0.76rem;
+            color: #fbbf24;
             font-weight: 700;
         }
 

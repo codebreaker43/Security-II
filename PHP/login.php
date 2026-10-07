@@ -317,9 +317,9 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             --accent-orange-hover: #ea580c;
             --accent-orange-glow: rgba(234, 88, 12, 0.35);
             --dark-bg: #0b1120;
-            --card-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.08) 100%);
-            --input-bg: rgba(255, 255, 255, 0.15);
-            --input-border: rgba(255, 255, 255, 0.35);
+            --card-bg: linear-gradient(145deg, rgba(15, 23, 42, 0.92) 0%, rgba(24, 34, 53, 0.90) 100%);
+            --input-bg: rgba(8, 12, 22, 0.75);
+            --input-border: rgba(255, 255, 255, 0.25);
             --input-border-focus: #fbbf24;
             --text-main: #ffffff;
             --text-muted: #cbd5e1;
@@ -475,13 +475,14 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
 
         .form-card {
             background: var(--card-bg);
-            backdrop-filter: blur(18px);
-            border: 1px solid rgba(245, 158, 11, 0.35);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid rgba(245, 158, 11, 0.4);
             border-radius: 16px;
-            padding: 1.5rem 2rem;
+            padding: 1.6rem 2.2rem;
             width: 100%;
             max-width: 440px;
-            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08), 0 0 35px rgba(245, 158, 11, 0.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(245, 158, 11, 0.12);
             position: relative;
         }
 
@@ -518,12 +519,12 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             color: #ffffff;
             letter-spacing: 0.5px;
             line-height: 1.1;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
         }
 
         .form-subtitle {
-            color: var(--text-muted);
-            font-size: 0.82rem;
+            color: #cbd5e1;
+            font-size: 0.86rem;
             margin-left: calc(5px + 0.75rem);
             font-weight: 500;
         }
@@ -548,7 +549,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
 
         .section-title-text {
             font-family: var(--font-heading);
-            font-size: 0.8rem;
+            font-size: 0.82rem;
             font-weight: 800;
             letter-spacing: 1.5px;
             color: #fbbf24;
@@ -575,13 +576,13 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             display: flex;
             align-items: center;
             gap: 0.35rem;
-            font-size: 0.72rem;
+            font-size: 0.82rem;
             font-weight: 700;
-            color: var(--text-label);
+            color: #fbbf24;
             text-transform: uppercase;
             letter-spacing: 0.6px;
-            margin-bottom: 0.3rem;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+            margin-bottom: 0.35rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
         }
 
         .req-star {
@@ -591,15 +592,15 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
 
         .input-control {
             width: 100%;
-            height: 40px;
+            height: 42px;
             background: var(--input-bg);
-            border: 1px solid var(--input-border);
+            border: 1.5px solid var(--input-border);
             border-radius: 8px;
-            padding: 0 0.85rem;
-            color: #ffffff;
+            padding: 0 0.95rem;
+            color: #ffffff !important;
             font-weight: 600;
             font-family: var(--font-main);
-            font-size: 0.88rem;
+            font-size: 0.95rem;
             transition: all 0.2s ease;
             box-sizing: border-box;
             backdrop-filter: blur(10px);
@@ -608,15 +609,26 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
         }
 
         .input-control::placeholder {
-            color: #cbd5e1;
-            font-weight: 400;
+            color: #94a3b8 !important;
+            font-weight: 500;
         }
 
         .input-control:focus {
-            border-color: #fbbf24;
-            box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
-            background: rgba(255, 255, 255, 0.25);
-            color: #ffffff;
+            border-color: #fbbf24 !important;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35) !important;
+            background: rgba(15, 23, 42, 0.95) !important;
+            color: #ffffff !important;
+        }
+
+        /* Autofill High Contrast Fix */
+        .input-control:-webkit-autofill,
+        .input-control:-webkit-autofill:hover, 
+        .input-control:-webkit-autofill:focus, 
+        .input-control:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 1000px #090d16 inset !important;
+            -webkit-text-fill-color: #ffffff !important;
+            caret-color: #ffffff !important;
+            transition: background-color 5000s ease-in-out 0s;
         }
 
         /* Form Options Row (Show Password & Forgot Password) */
@@ -625,7 +637,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             align-items: center;
             justify-content: space-between;
             margin: 0.15rem 0 1rem;
-            font-size: 0.82rem;
+            font-size: 0.85rem;
         }
 
         .checkbox-container {
@@ -637,17 +649,17 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
         }
 
         .checkbox-container input[type="checkbox"] {
-            width: 15px;
-            height: 15px;
+            width: 16px;
+            height: 16px;
             accent-color: #f59e0b;
             cursor: pointer;
             border-radius: 4px;
         }
 
         .checkbox-label {
-            color: var(--text-muted);
-            font-weight: 500;
-            font-size: 0.82rem;
+            color: #e2e8f0;
+            font-weight: 600;
+            font-size: 0.85rem;
         }
 
         .forgot-link-btn {
@@ -964,6 +976,62 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
 
         footer a:hover {
             color: #f59e0b;
+        }
+
+        /* First Login Password Change Modal */
+        .first-login-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+
+        .first-login-modal-card {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.96) 0%, rgba(24, 34, 53, 0.94) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 460px;
+            width: 100%;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 35px rgba(245, 158, 11, 0.15);
+            text-align: center;
+        }
+
+        .modal-header-badge {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: rgba(245, 158, 11, 0.15);
+            border: 1.5px solid rgba(245, 158, 11, 0.4);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .modal-title {
+            font-family: var(--font-heading);
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-desc {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            margin-bottom: 1.25rem;
+            line-height: 1.4;
         }
 
         @media (max-width: 520px) {

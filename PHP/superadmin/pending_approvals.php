@@ -305,12 +305,13 @@ include("../db.php");
         }
 
         .applicant-label {
-            font-size: 0.72rem;
+            font-size: 0.78rem;
             font-weight: 700;
-            color: #94a3b8;
+            color: #fbbf24;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 0.25rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
         }
 
         .applicant-value {
@@ -327,29 +328,50 @@ include("../db.php");
 
         .form-group-modal label {
             display: block;
-            font-size: 0.78rem;
+            font-size: 0.82rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.6px;
-            color: #cbd5e1;
+            color: #fbbf24;
             margin-bottom: 0.35rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
         }
 
         .form-control-modal {
             width: 100%;
-            padding: 0.75rem 0.9rem;
+            padding: 0.75rem 0.95rem;
             border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            background: rgba(10, 14, 22, 0.85);
-            color: #f8fafc;
-            font-size: 0.9rem;
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
+            background: rgba(8, 12, 22, 0.85);
+            color: #ffffff !important;
+            font-size: 0.92rem;
+            font-weight: 600;
             outline: none;
             box-sizing: border-box;
+            transition: all 0.25s ease;
+        }
+
+        .form-control-modal::placeholder {
+            color: #94a3b8 !important;
+            font-weight: 500;
         }
 
         .form-control-modal:focus {
-            border-color: #f59e0b;
-            box-shadow: 0 0 12px rgba(245, 158, 11, 0.35);
+            border-color: #fbbf24 !important;
+            background: rgba(15, 23, 42, 0.95) !important;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35) !important;
+            color: #ffffff !important;
+        }
+
+        /* Autofill High Contrast Fix */
+        .form-control-modal:-webkit-autofill,
+        .form-control-modal:-webkit-autofill:hover, 
+        .form-control-modal:-webkit-autofill:focus, 
+        .form-control-modal:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 1000px #090d16 inset !important;
+            -webkit-text-fill-color: #ffffff !important;
+            caret-color: #ffffff !important;
+            transition: background-color 5000s ease-in-out 0s;
         }
 
         .empty-state-box {

@@ -305,17 +305,17 @@ $can_approve = in_array('approve_users', $privileges);
         }
 
         .app-modal-card {
-            background: rgba(255, 255, 255, 0.96);
-            border: 1px solid rgba(245, 158, 11, 0.35);
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.96) 0%, rgba(24, 34, 53, 0.94) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.4);
             border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 25px 65px rgba(0, 0, 0, 0.6), 0 0 35px rgba(245, 158, 11, 0.15);
             max-width: 520px;
             width: 100%;
             padding: 2rem;
             position: relative;
             max-height: 90vh;
             overflow-y: auto;
-            color: #0f172a;
+            color: #ffffff;
         }
 
         .modal-title-row {
@@ -324,22 +324,29 @@ $can_approve = in_array('approve_users', $privileges);
             align-items: center;
             margin-bottom: 1.25rem;
             padding-bottom: 0.75rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .modal-title-row h3 {
             font-size: 1.35rem;
             color: #ffffff;
+            font-weight: 700;
             margin: 0;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
         }
 
         .btn-modal-close {
             background: transparent;
             border: none;
-            color: #94a3b8;
-            font-size: 1.5rem;
+            color: #fbbf24;
+            font-size: 1.6rem;
             cursor: pointer;
             line-height: 1;
+            transition: color 0.2s ease;
+        }
+
+        .btn-modal-close:hover {
+            color: #fde047;
         }
 
         .form-group-modal {
@@ -349,28 +356,57 @@ $can_approve = in_array('approve_users', $privileges);
 
         .form-group-modal label {
             display: block;
-            font-size: 0.78rem;
+            font-size: 0.82rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.6px;
-            color: #cbd5e1;
+            color: #fbbf24;
             margin-bottom: 0.35rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
         }
 
         .form-control-modal {
             width: 100%;
-            padding: 0.75rem 0.9rem;
+            padding: 0.75rem 0.95rem;
             border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            background: rgba(10, 14, 22, 0.85);
-            color: #f8fafc;
-            font-size: 0.9rem;
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
+            background: rgba(8, 12, 22, 0.75);
+            color: #ffffff !important;
+            font-size: 0.92rem;
+            font-weight: 600;
             outline: none;
             box-sizing: border-box;
+            transition: all 0.25s ease;
+        }
+
+        .form-control-modal::placeholder {
+            color: #94a3b8 !important;
+            font-weight: 500;
         }
 
         .form-control-modal:focus {
-            border-color: #3b82f6;
+            border-color: #fbbf24 !important;
+            background: rgba(15, 23, 42, 0.95) !important;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35) !important;
+            color: #ffffff !important;
+        }
+
+        select.form-control-modal option {
+            background-color: #0f172a !important;
+            color: #ffffff !important;
+            font-weight: 600;
+            padding: 8px 12px;
+        }
+
+        /* Autofill High Contrast Fix */
+        .form-control-modal:-webkit-autofill,
+        .form-control-modal:-webkit-autofill:hover, 
+        .form-control-modal:-webkit-autofill:focus, 
+        .form-control-modal:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 1000px #090d16 inset !important;
+            -webkit-text-fill-color: #ffffff !important;
+            caret-color: #ffffff !important;
+            transition: background-color 5000s ease-in-out 0s;
         }
 
         /* Real-time Field Error Messages */

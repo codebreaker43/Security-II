@@ -238,9 +238,9 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
         }
 
         .filter-group label {
-            font-size: 0.75rem;
-            color: #475569;
-            font-weight: 600;
+            font-size: 0.80rem;
+            color: #0f172a;
+            font-weight: 700;
             letter-spacing: 0.5px;
         }
 
@@ -248,12 +248,13 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
         .filter-group input[type="text"],
         .filter-group input[type="date"] {
             width: 100%;
-            padding: 0.6rem 0.85rem;
+            padding: 0.65rem 0.85rem;
             background: #ffffff;
-            border: 1.5px solid #cbd5e1;
+            border: 1.5px solid #94a3b8;
             border-radius: 8px;
             color: #0f172a;
-            font-size: 0.85rem;
+            font-size: 0.88rem;
+            font-weight: 600;
             font-family: inherit;
             transition: all 0.25s ease;
             outline: none;
