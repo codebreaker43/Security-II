@@ -67,24 +67,20 @@ if (!$is_profile_complete) {
         }
 
         .profile-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.08) 100%);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            background: #ffffff;
             border-radius: 16px;
             padding: 1.25rem;
-            border: 1px solid rgba(255, 255, 255, 0.35);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
             position: relative;
         }
 
         .details-card {
-            background: linear-gradient(145deg, rgba(15, 23, 42, 0.92) 0%, rgba(24, 34, 53, 0.90) 100%);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            background: #ffffff;
             border-radius: 16px;
             padding: 1.25rem 1.5rem;
-            border: 1px solid rgba(245, 158, 11, 0.4);
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55), 0 0 35px rgba(245, 158, 11, 0.12);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
             position: relative;
             max-height: calc(100vh - 3rem);
             overflow-y: auto;
@@ -108,19 +104,17 @@ if (!$is_profile_complete) {
             font-size: 2.2rem;
             color: white;
             font-weight: 800;
-            box-shadow: 0 8px 22px rgba(245, 158, 11, 0.4);
-            border: 3px solid rgba(245, 158, 11, 0.45);
+            box-shadow: 0 8px 22px rgba(245, 158, 11, 0.35);
+            border: 3px solid #fde68a;
         }
 
         .profile-input {
             width: 100%;
             padding: 0.65rem 0.95rem;
-            background: rgba(8, 12, 22, 0.75);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1.5px solid rgba(255, 255, 255, 0.25);
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
             border-radius: 8px;
-            color: #ffffff !important;
+            color: #0f172a !important;
             font-size: 0.92rem;
             font-weight: 600;
             box-sizing: border-box;
@@ -135,22 +129,22 @@ if (!$is_profile_complete) {
         }
 
         .profile-input:focus {
-            border-color: #fbbf24 !important;
-            background: rgba(15, 23, 42, 0.95) !important;
-            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35) !important;
-            color: #ffffff !important;
+            border-color: #f59e0b !important;
+            background: #ffffff !important;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25) !important;
+            color: #0f172a !important;
         }
 
         .profile-input:read-only {
-            background: rgba(8, 12, 22, 0.55) !important;
-            border-color: rgba(255, 255, 255, 0.18) !important;
-            color: #f8fafc !important;
+            background: #f8fafc !important;
+            border-color: #e2e8f0 !important;
+            color: #1e293b !important;
             cursor: default;
         }
 
         select.profile-select option {
-            background: #0f172a !important;
-            color: #ffffff !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
             font-weight: 600;
             padding: 8px 12px;
         }
@@ -158,12 +152,10 @@ if (!$is_profile_complete) {
         .modal-form-input {
             width: 100%;
             padding: 0.65rem 0.95rem;
-            background: rgba(8, 12, 22, 0.75);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1.5px solid rgba(255, 255, 255, 0.25);
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
             border-radius: 8px;
-            color: #ffffff !important;
+            color: #0f172a !important;
             font-size: 0.92rem;
             font-weight: 600;
             box-sizing: border-box;
@@ -172,10 +164,10 @@ if (!$is_profile_complete) {
         }
 
         .modal-form-input:focus {
-            border-color: #fbbf24 !important;
-            background: rgba(15, 23, 42, 0.95) !important;
-            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35) !important;
-            color: #ffffff !important;
+            border-color: #3b82f6 !important;
+            background: #ffffff !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
+            color: #0f172a !important;
         }
 
         /* Autofill High Contrast Fix */
@@ -184,15 +176,15 @@ if (!$is_profile_complete) {
         .profile-input:-webkit-autofill:focus, 
         .profile-input:-webkit-autofill:active,
         .modal-form-input:-webkit-autofill {
-            -webkit-box-shadow: 0 0 0 1000px #090d16 inset !important;
-            -webkit-text-fill-color: #ffffff !important;
-            caret-color: #ffffff !important;
+            -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+            -webkit-text-fill-color: #0f172a !important;
+            caret-color: #0f172a !important;
             transition: background-color 5000s ease-in-out 0s;
         }
 
         /* Real-time Field Error Messages */
         .error-msg {
-            color: #f87171;
+            color: #dc2626;
             font-size: 0.74rem;
             font-weight: 600;
             display: none;
@@ -208,29 +200,27 @@ if (!$is_profile_complete) {
 
         .input-error-highlight {
             border-color: #ef4444 !important;
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3) !important;
-            background: rgba(239, 68, 68, 0.15) !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+            background: #fef2f2 !important;
         }
 
         .profile-label {
             display: block;
-            color: #fbbf24;
+            color: #1e293b;
             font-size: 0.80rem;
             margin-bottom: 0.3rem;
             text-transform: uppercase;
             letter-spacing: 0.6px;
-            font-weight: 700;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            font-weight: 800;
+            text-shadow: none;
         }
 
         .info-group {
-            background: rgba(8, 12, 22, 0.65);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: #f8fafc;
             padding: 0.6rem 0.85rem;
             border-radius: 8px;
             margin-bottom: 0.4rem;
-            border: 1px solid rgba(255, 255, 255, 0.18);
+            border: 1.5px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -239,15 +229,17 @@ if (!$is_profile_complete) {
         .info-group .profile-label {
             margin-bottom: 0;
             font-size: 0.76rem;
-            color: #fbbf24;
+            color: #64748b;
             font-weight: 700;
+            text-shadow: none;
         }
 
         .info-group p {
             margin: 0;
             font-weight: 800;
-            color: #ffffff !important;
+            color: #0f172a !important;
             font-size: 0.82rem;
+            text-shadow: none;
         }
 
         .btn-edit,
@@ -256,43 +248,42 @@ if (!$is_profile_complete) {
             border-radius: 7px;
             cursor: pointer;
             transition: all 0.2s ease;
-            font-weight: 700;
+            font-weight: 800;
             font-size: 0.78rem;
             letter-spacing: 0.5px;
             text-transform: uppercase;
         }
 
         .btn-edit {
-            background: rgba(245, 158, 11, 0.2);
-            color: #fbbf24;
-            border: 1px solid rgba(245, 158, 11, 0.5);
-            backdrop-filter: blur(8px);
+            background: #fffbeb;
+            color: #b45309;
+            border: 1.5px solid #fde68a;
         }
 
         .btn-edit:hover {
-            background: rgba(245, 158, 11, 0.35);
-            color: #ffffff;
-            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+            background: #fef3c7;
+            color: #78350f;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
         }
 
         .btn-save {
-            background: linear-gradient(135deg, #ff5500, #dc2626);
-            color: white;
+            background: linear-gradient(135deg, #f59e0b, #ea580c);
+            color: #ffffff;
             border: none;
             display: none;
-            box-shadow: 0 4px 15px rgba(255, 85, 0, 0.4);
+            box-shadow: 0 4px 15px rgba(234, 88, 12, 0.35);
         }
 
         .btn-save:hover {
             transform: translateY(-1px);
-            background: linear-gradient(135deg, #ff661a, #eb4d00);
-            box-shadow: 0 6px 20px rgba(255, 85, 0, 0.5);
+            background: linear-gradient(135deg, #fbbf24, #f97316);
+            box-shadow: 0 6px 20px rgba(234, 88, 12, 0.45);
         }
 
         .section-title {
             margin-bottom: 0.75rem;
             padding-bottom: 0.5rem;
-            border-bottom: 1px solid rgba(245, 158, 11, 0.45);
+            border-bottom: 2px solid #f1f5f9;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -301,8 +292,8 @@ if (!$is_profile_complete) {
         .section-title h3 {
             font-size: 1.05rem;
             font-weight: 800;
-            color: #fbbf24;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            color: #d97706;
+            text-shadow: none;
             margin: 0;
             text-transform: uppercase;
             letter-spacing: 0.75px;
@@ -323,9 +314,9 @@ if (!$is_profile_complete) {
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.65);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             z-index: 2000;
             justify-content: center;
             align-items: center;
@@ -339,12 +330,10 @@ if (!$is_profile_complete) {
         }
 
         .app-modal-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.10) 100%);
-            backdrop-filter: blur(30px) saturate(180%);
-            -webkit-backdrop-filter: blur(30px) saturate(180%);
-            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 20px;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
             max-width: 440px;
             width: 100%;
             max-height: calc(100vh - 3rem);
@@ -352,7 +341,7 @@ if (!$is_profile_complete) {
             margin: auto;
             padding: 2rem;
             text-align: center;
-            color: #ffffff;
+            color: #0f172a;
         }
 
         @media (max-width: 850px) {
@@ -378,13 +367,13 @@ if (!$is_profile_complete) {
                 <!-- Left Sidebar: Basic Info Card -->
                 <div class="profile-card" style="text-align: center;">
                     <div class="profile-avatar" id="avatarInitial">?</div>
-                    <h2 id="displayFullName" style="color: #ffffff; margin-bottom: 0.15rem; font-size: 1.15rem; font-weight: 800; text-shadow: 0 2px 6px rgba(0,0,0,0.5);">Loading...</h2>
-                    <p id="displayUsername" style="color: #fbbf24; margin-bottom: 1rem; font-weight: 800; font-size: 0.9rem; text-shadow: 0 0 10px rgba(245, 158, 11, 0.4);">username</p>
+                    <h2 id="displayFullName" style="color: #0f172a; margin-bottom: 0.15rem; font-size: 1.15rem; font-weight: 800;">Loading...</h2>
+                    <p id="displayUsername" style="color: #d97706; margin-bottom: 1rem; font-weight: 800; font-size: 0.9rem;">username</p>
 
                     <div style="text-align: left; width: 100%;">
                         <div class="info-group">
                             <span class="profile-label">ID Number</span>
-                            <p id="displayIdno" style="font-family: monospace; color: #38bdf8; font-weight: 800;">----</p>
+                            <p id="displayIdno" style="font-family: monospace; color: #0284c7; font-weight: 800;">----</p>
                         </div>
 
                         <div class="info-group">
@@ -502,11 +491,11 @@ if (!$is_profile_complete) {
                             </div>
                             <div style="grid-column: 1 / -1;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-                                    <span class="profile-label" style="margin-bottom: 0;">New Password <span style="color: #94a3b8; font-size: 0.72rem; font-weight: normal; text-transform: none;">(Optional - leave blank to keep unchanged)</span></span>
+                                    <span class="profile-label" style="margin-bottom: 0;">New Password <span style="color: #64748b; font-size: 0.72rem; font-weight: normal; text-transform: none;">(Optional - leave blank to keep unchanged)</span></span>
                                 </div>
                                 <div style="position: relative;">
                                     <input type="password" class="profile-input" id="newPassword" placeholder="Enter new password if changing" readonly style="padding-right: 2.75rem;" autocomplete="new-password">
-                                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('newPassword', this)" aria-label="Toggle password visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0; display: flex; align-items: center;">
+                                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('newPassword', this)" aria-label="Toggle password visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0; display: flex; align-items: center;">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                     </button>
                                 </div>
@@ -514,16 +503,16 @@ if (!$is_profile_complete) {
                                 <!-- Password Strength Bar -->
                                 <div id="profilePasswordStrengthWrap" style="margin-top: 8px; display: none;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                        <span style="font-size: 0.73rem; color: #94a3b8;">Password Strength:</span>
-                                        <span id="profileStrengthLabel" style="font-size: 0.75rem; font-weight: 700; color: #94a3b8;">Weak</span>
+                                        <span style="font-size: 0.73rem; color: #64748b;">Password Strength:</span>
+                                        <span id="profileStrengthLabel" style="font-size: 0.75rem; font-weight: 700; color: #64748b;">Weak</span>
                                     </div>
                                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; height: 5px;">
-                                        <div id="profileBar1" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
-                                        <div id="profileBar2" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
-                                        <div id="profileBar3" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
-                                        <div id="profileBar4" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
+                                        <div id="profileBar1" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
+                                        <div id="profileBar2" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
+                                        <div id="profileBar3" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
+                                        <div id="profileBar4" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
                                     </div>
-                                    <small style="color: #94a3b8; font-size: 0.72rem; display: block; margin-top: 5px;">Must be at least 8 characters with uppercase, number, and special character.</small>
+                                    <small style="color: #64748b; font-size: 0.72rem; display: block; margin-top: 5px;">Must be at least 8 characters with uppercase, number, and special character.</small>
                                 </div>
                                 <small class="error-msg" id="newPassword_error"></small>
                             </div>
@@ -575,13 +564,13 @@ if (!$is_profile_complete) {
                                 </button>
                             </div>
                         </div>
-                        <div style="background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.25); border-radius: 7px; padding: 0.5rem 0.75rem; margin-bottom: 0.65rem; font-size: 0.78rem; color: #93c5fd; display: flex; align-items: flex-start; gap: 0.5rem;">
+                        <div style="background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 8px; padding: 0.6rem 0.85rem; margin-bottom: 0.65rem; font-size: 0.78rem; color: #1e40af; display: flex; align-items: flex-start; gap: 0.5rem;">
                             <span style="font-size: 1rem; margin-top: 0.05rem;">💡</span>
                             <span><strong>Forgot your security answers?</strong> Click <em>Reset Security Questions</em> above to verify your identity with your current password, then choose new questions and answers. No need to remember your old answers.</span>
                         </div>
 
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.65rem;">
-                            <div style="background: rgba(255, 255, 255, 0.10); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 0.85rem; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.22); cursor: pointer;" onclick="if(!isEditing) enableEditSecurity('security_question1')">
+                            <div style="background: #f8fafc; padding: 0.85rem; border-radius: 10px; border: 1.5px solid #e2e8f0; cursor: pointer;" onclick="if(!isEditing) enableEditSecurity('security_question1')">
                                 <span class="profile-label">Question 1 <span style="color: #ef4444;">*</span></span>
                                 <select id="security_question1" class="profile-input profile-select" disabled style="margin-top: 0.25rem;" onclick="enableEditSecurity('security_question1')">
                                     <option value="">Select Question 1</option>
@@ -594,7 +583,7 @@ if (!$is_profile_complete) {
                                     <span class="profile-label">Answer 1</span>
                                     <div style="position: relative;">
                                         <input type="password" class="profile-input" id="security_answer1" placeholder="Leave blank to keep current" readonly onclick="enableEditSecurity('security_answer1')" style="padding-right: 2.5rem;">
-                                        <button type="button" onclick="togglePasswordVisibility('security_answer1', this)" aria-label="Toggle visibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0; display: flex; align-items: center;">
+                                        <button type="button" onclick="togglePasswordVisibility('security_answer1', this)" aria-label="Toggle visibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0; display: flex; align-items: center;">
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                         </button>
                                     </div>
@@ -602,7 +591,7 @@ if (!$is_profile_complete) {
                                 <small class="error-msg" id="security_answer1_error"></small>
                             </div>
 
-                            <div style="background: rgba(255, 255, 255, 0.10); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 0.85rem; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.22); cursor: pointer;" onclick="if(!isEditing) enableEditSecurity('security_question2')">
+                            <div style="background: #f8fafc; padding: 0.85rem; border-radius: 10px; border: 1.5px solid #e2e8f0; cursor: pointer;" onclick="if(!isEditing) enableEditSecurity('security_question2')">
                                 <span class="profile-label">Question 2 <span style="color: #ef4444;">*</span></span>
                                 <select id="security_question2" class="profile-input profile-select" disabled style="margin-top: 0.25rem;" onclick="enableEditSecurity('security_question2')">
                                     <option value="">Select Question 2</option>
@@ -615,7 +604,7 @@ if (!$is_profile_complete) {
                                     <span class="profile-label">Answer 2</span>
                                     <div style="position: relative;">
                                         <input type="password" class="profile-input" id="security_answer2" placeholder="Leave blank to keep current" readonly onclick="enableEditSecurity('security_answer2')" style="padding-right: 2.5rem;">
-                                        <button type="button" onclick="togglePasswordVisibility('security_answer2', this)" aria-label="Toggle visibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0; display: flex; align-items: center;">
+                                        <button type="button" onclick="togglePasswordVisibility('security_answer2', this)" aria-label="Toggle visibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0; display: flex; align-items: center;">
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                         </button>
                                     </div>
@@ -623,7 +612,7 @@ if (!$is_profile_complete) {
                                 <small class="error-msg" id="security_answer2_error"></small>
                             </div>
 
-                            <div style="background: rgba(255, 255, 255, 0.10); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 0.85rem; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.22); cursor: pointer;" onclick="if(!isEditing) enableEditSecurity('security_question3')">
+                            <div style="background: #f8fafc; padding: 0.85rem; border-radius: 10px; border: 1.5px solid #e2e8f0; cursor: pointer;" onclick="if(!isEditing) enableEditSecurity('security_question3')">
                                 <span class="profile-label">Question 3 <span style="color: #ef4444;">*</span></span>
                                 <select id="security_question3" class="profile-input profile-select" disabled style="margin-top: 0.25rem;" onclick="enableEditSecurity('security_question3')">
                                     <option value="">Select Question 3</option>
@@ -636,7 +625,7 @@ if (!$is_profile_complete) {
                                     <span class="profile-label">Answer 3</span>
                                     <div style="position: relative;">
                                         <input type="password" class="profile-input" id="security_answer3" placeholder="Leave blank to keep current" readonly onclick="enableEditSecurity('security_answer3')" style="padding-right: 2.5rem;">
-                                        <button type="button" onclick="togglePasswordVisibility('security_answer3', this)" aria-label="Toggle visibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0; display: flex; align-items: center;">
+                                        <button type="button" onclick="togglePasswordVisibility('security_answer3', this)" aria-label="Toggle visibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0; display: flex; align-items: center;">
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                         </button>
                                     </div>
@@ -653,23 +642,23 @@ if (!$is_profile_complete) {
     <!-- Current Password Verification Modal -->
     <div class="app-modal-overlay" id="passwordModal">
         <div class="app-modal-card">
-            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">&#128274;</div>
-            <h3 style="color: #ffffff; margin-bottom: 0.5rem; font-size: 1.25rem;">Confirm Profile Updates</h3>
-            <p style="color: #94a3b8; font-size: 0.88rem; margin-bottom: 1.25rem;">Please enter your current password or passkey to confirm and save your personal information.</p>
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔒</div>
+            <h3 style="color: #0f172a; margin-bottom: 0.5rem; font-size: 1.25rem; font-weight: 800;">Confirm Profile Updates</h3>
+            <p style="color: #64748b; font-size: 0.88rem; margin-bottom: 1.25rem;">Please enter your current password or passkey to confirm and save your personal information.</p>
 
             <form onsubmit="submitProfileWithPassword(event)">
                 <div style="text-align: left; margin-bottom: 1.25rem;">
                     <label class="profile-label">Current Password / Passkey <span style="color: #ef4444;">*</span></label>
                     <div style="position: relative;">
                         <input type="password" id="confirmCurrentPassword" class="modal-form-input" style="padding-right: 2.5rem;" required placeholder="Enter current password or passkey">
-                        <button type="button" onclick="togglePasswordVisibility('confirmCurrentPassword', this)" aria-label="Toggle password visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0; display: flex; align-items: center;">
+                        <button type="button" onclick="togglePasswordVisibility('confirmCurrentPassword', this)" aria-label="Toggle password visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0; display: flex; align-items: center;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         </button>
                     </div>
                 </div>
 
                 <div style="display: flex; justify-content: center; gap: 0.75rem;">
-                    <button type="button" class="btn-edit" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: #fff;" onclick="closePasswordModal()">Cancel</button>
+                    <button type="button" class="btn-edit" style="background: #f1f5f9; border-color: #cbd5e1; color: #475569;" onclick="closePasswordModal()">Cancel</button>
                     <button type="submit" class="btn-save" style="display: inline-block;">Verify & Save</button>
                 </div>
             </form>
@@ -680,22 +669,22 @@ if (!$is_profile_complete) {
     <div class="app-modal-overlay" id="resetSQPasswordModal">
         <div class="app-modal-card" style="max-width: 440px; text-align: center;">
             <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔐</div>
-            <h3 style="color: #ffffff; margin-bottom: 0.5rem; font-size: 1.25rem;">Verify Your Identity</h3>
-            <p style="color: #cbd5e1; font-size: 0.88rem; margin-bottom: 1.25rem;">Before resetting your security questions, please confirm your identity by entering your current login password or passkey.</p>
+            <h3 style="color: #0f172a; margin-bottom: 0.5rem; font-size: 1.25rem; font-weight: 800;">Verify Your Identity</h3>
+            <p style="color: #64748b; font-size: 0.88rem; margin-bottom: 1.25rem;">Before resetting your security questions, please confirm your identity by entering your current login password or passkey.</p>
 
             <form onsubmit="verifySQPassword(event)">
                 <div style="text-align: left; margin-bottom: 1.25rem;">
                     <label class="profile-label">Current Password / Passkey <span style="color: #ef4444;">*</span></label>
                     <div style="position: relative;">
                         <input type="password" id="sqVerifyPassword" class="modal-form-input" style="padding-right: 2.5rem;" required placeholder="Enter current password or passkey">
-                        <button type="button" onclick="togglePasswordVisibility('sqVerifyPassword', this)" aria-label="Toggle password visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0; display: flex; align-items: center;">
+                        <button type="button" onclick="togglePasswordVisibility('sqVerifyPassword', this)" aria-label="Toggle password visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0; display: flex; align-items: center;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         </button>
                     </div>
                 </div>
 
                 <div style="display: flex; justify-content: center; gap: 0.75rem;">
-                    <button type="button" class="btn-edit" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: #fff;" onclick="closeModal('resetSQPasswordModal')">Cancel</button>
+                    <button type="button" class="btn-edit" style="background: #f1f5f9; border-color: #cbd5e1; color: #475569;" onclick="closeModal('resetSQPasswordModal')">Cancel</button>
                     <button type="submit" style="padding: 0.55rem 1.4rem; border-radius: 8px; background: linear-gradient(135deg, #ef4444, #f59e0b); color: #fff; border: 1px solid rgba(254, 215, 170, 0.35); font-weight: 700; font-size: 0.9rem; cursor: pointer; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);">Verify Identity</button>
                 </div>
             </form>
@@ -705,19 +694,19 @@ if (!$is_profile_complete) {
     <!-- Reset Security Questions: Step 2 - Choose New Questions Modal -->
     <div class="app-modal-overlay" id="resetSQFormModal">
         <div class="app-modal-card" style="max-width: 560px; max-height: calc(100vh - 3rem); overflow-y: auto; text-align: left;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0;">
                 <div>
-                    <h3 style="color: #ffffff; font-size: 1.2rem; margin: 0;">Choose New Security Questions</h3>
-                    <p style="color: #94a3b8; font-size: 0.78rem; margin: 0.2rem 0 0;">Identity verified ✅ — Select 3 new questions and enter your answers below.</p>
+                    <h3 style="color: #0f172a; font-size: 1.2rem; margin: 0; font-weight: 800;">Choose New Security Questions</h3>
+                    <p style="color: #64748b; font-size: 0.78rem; margin: 0.2rem 0 0;">Identity verified ✅ — Select 3 new questions and enter your answers below.</p>
                 </div>
-                <button style="background: transparent; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; line-height: 1;" onclick="closeResetSQModal()">&times;</button>
+                <button style="background: transparent; border: none; color: #64748b; font-size: 1.5rem; cursor: pointer; line-height: 1;" onclick="closeResetSQModal()">&times;</button>
             </div>
 
             <form id="resetSQForm" autocomplete="off" onsubmit="submitResetSecurityQuestions(event)">
                 <div style="display: flex; flex-direction: column; gap: 1rem;">
                     <!-- Question 1 -->
-                    <div style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
-                        <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #cbd5e1; margin-bottom: 0.35rem;">Question 1 <span style="color: #ef4444;">*</span></label>
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: 10px; border: 1.5px solid #e2e8f0;">
+                        <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; margin-bottom: 0.35rem;">Question 1 <span style="color: #ef4444;">*</span></label>
                         <select id="resetSQ1" class="modal-form-input profile-select" style="margin-top: 0.15rem;" required autocomplete="off">
                             <option value="" selected disabled>Select Question 1</option>
                             <option value="What is your mother's maiden name?">Mother's maiden name?</option>
@@ -729,8 +718,8 @@ if (!$is_profile_complete) {
                     </div>
 
                     <!-- Question 2 -->
-                    <div style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
-                        <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #cbd5e1; margin-bottom: 0.35rem;">Question 2 <span style="color: #ef4444;">*</span></label>
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: 10px; border: 1.5px solid #e2e8f0;">
+                        <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; margin-bottom: 0.35rem;">Question 2 <span style="color: #ef4444;">*</span></label>
                         <select id="resetSQ2" class="modal-form-input profile-select" style="margin-top: 0.15rem;" required autocomplete="off">
                             <option value="" selected disabled>Select Question 2</option>
                             <option value="What is the name of your favorite teacher?">Favorite teacher?</option>
@@ -742,8 +731,8 @@ if (!$is_profile_complete) {
                     </div>
 
                     <!-- Question 3 -->
-                    <div style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
-                        <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #cbd5e1; margin-bottom: 0.35rem;">Question 3 <span style="color: #ef4444;">*</span></label>
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: 10px; border: 1.5px solid #e2e8f0;">
+                        <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; margin-bottom: 0.35rem;">Question 3 <span style="color: #ef4444;">*</span></label>
                         <select id="resetSQ3" class="modal-form-input profile-select" style="margin-top: 0.15rem;" required autocomplete="off">
                             <option value="" selected disabled>Select Question 3</option>
                             <option value="What is your favorite color?">Favorite color?</option>
@@ -755,13 +744,13 @@ if (!$is_profile_complete) {
                     </div>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; font-size: 0.82rem; color: #94a3b8;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; font-size: 0.82rem; color: #64748b;">
                     <input type="checkbox" id="toggleResetAnswers" style="accent-color: #3b82f6; width: 15px; height: 15px;">
                     <label for="toggleResetAnswers" style="cursor: pointer;">Show answers</label>
                 </div>
 
                 <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem;">
-                    <button type="button" class="btn-edit" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: #fff;" onclick="closeResetSQModal()">Cancel</button>
+                    <button type="button" class="btn-edit" style="background: #f1f5f9; border-color: #cbd5e1; color: #475569;" onclick="closeResetSQModal()">Cancel</button>
                     <button type="submit" style="padding: 0.6rem 1.4rem; border-radius: 8px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; border: none; font-weight: 700; font-size: 0.9rem; cursor: pointer; box-shadow: 0 3px 12px rgba(59,130,246,0.35); display: inline-flex; align-items: center; gap: 0.4rem;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         Save New Security Questions
@@ -946,13 +935,13 @@ if (!$is_profile_complete) {
                         const statusEl = document.getElementById('displaySecurityStatus');
                         if (qCount === 3) {
                             statusEl.textContent = '● Configured (3/3)';
-                            statusEl.style.color = '#4ade80';
+                            statusEl.style.color = '#16a34a';
                         } else if (qCount > 0) {
                             statusEl.textContent = `● Partial (${qCount}/3)`;
-                            statusEl.style.color = '#facc15';
+                            statusEl.style.color = '#d97706';
                         } else {
                             statusEl.textContent = '○ Not Set (0/3)';
-                            statusEl.style.color = '#f87171';
+                            statusEl.style.color = '#dc2626';
                         }
 
                         // If user has incomplete profile or is arriving from first login, automatically open edit mode
@@ -1510,7 +1499,7 @@ if (!$is_profile_complete) {
                 if (wrap) wrap.style.display = 'none';
                 clearSingleProfileFieldError('newPassword');
                 bars.forEach(b => {
-                    if (b) b.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    if (b) b.style.backgroundColor = '#e2e8f0';
                 });
                 if (label) label.textContent = '';
                 return true;
@@ -1551,7 +1540,7 @@ if (!$is_profile_complete) {
                     if (idx < score) {
                         b.style.backgroundColor = color;
                     } else {
-                        b.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                        b.style.backgroundColor = '#e2e8f0';
                     }
                 }
             });
