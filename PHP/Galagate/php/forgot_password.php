@@ -399,13 +399,12 @@ if (isset($_SESSION['otp_status_msg'])) {
         :root {
             --accent-orange: #f59e0b;
             --accent-orange-hover: #d97706;
-            --accent-orange-glow: rgba(245, 158, 11, 0.35);
-            --dark-bg: #0c0f14;
-            --card-bg: #12161f;
-            --input-bg: #151a24;
-            --input-border: rgba(255, 255, 255, 0.1);
-            --text-main: #f8fafc;
-            --text-muted: #8492a6;
+            --accent-orange-glow: rgba(245, 158, 11, 0.25);
+            --card-bg: #ffffff;
+            --input-bg: #f8fafc;
+            --input-border: #cbd5e1;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
             --font-main: 'Plus Jakarta Sans', system-ui, sans-serif;
             --font-heading: 'Outfit', sans-serif;
         }
@@ -415,12 +414,12 @@ if (isset($_SESSION['otp_status_msg'])) {
 
         body {
             font-family: var(--font-main);
-            background-color: var(--dark-bg);
+            background-color: #0c1222;
             color: var(--text-main);
             display: flex;
             flex-direction: column;
             background-image:
-                linear-gradient(rgba(5, 10, 20, 0.88), rgba(8, 14, 26, 0.93)),
+                linear-gradient(rgba(15, 23, 42, 0.22), rgba(15, 23, 42, 0.32)),
                 url('../../../img/one_piece_bg.jpg');
             background-size: cover;
             background-position: center;
@@ -428,13 +427,15 @@ if (isset($_SESSION['otp_status_msg'])) {
         }
 
         .navbar {
-            background: rgba(14, 18, 26, 0.95);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
             padding: 0.85rem 2rem;
             position: sticky;
             top: 0;
             z-index: 100;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
 
         .navdiv {
@@ -488,18 +489,20 @@ if (isset($_SESSION['otp_status_msg'])) {
         .btn-nav-login {
             padding: 0.5rem 1.25rem;
             border-radius: 25px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: #e2e8f0;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            color: #ffffff;
             font-size: 0.9rem;
             font-weight: 600;
             text-decoration: none;
             transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .btn-nav-login:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.3);
             color: #fff;
+            border-color: #fff;
         }
 
         .main-container {
@@ -507,18 +510,17 @@ if (isset($_SESSION['otp_status_msg'])) {
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 2rem 1.5rem;
+            padding: 2.25rem 1.5rem;
         }
 
         .form-card {
-            background: rgba(18, 22, 31, 0.94);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.9);
             border-radius: 16px;
-            padding: 2.25rem;
+            padding: 2.25rem 2.5rem;
             width: 100%;
-            max-width: 480px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            max-width: 485px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35), 0 0 35px rgba(245, 158, 11, 0.15);
         }
 
         /* Step Progress */
@@ -546,39 +548,40 @@ if (isset($_SESSION['otp_status_msg'])) {
             width: 28px;
             height: 28px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: #f1f5f9;
+            border: 1.5px solid #cbd5e1;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 800;
             font-size: 0.8rem;
-            color: #94a3b8;
+            color: #64748b;
         }
 
         .step-item.active .step-num {
-            background: var(--accent-orange);
-            border-color: var(--accent-orange);
+            background: linear-gradient(135deg, #f59e0b, #ea580c);
+            border-color: #f59e0b;
             color: #fff;
-            box-shadow: 0 0 12px var(--accent-orange-glow);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
         }
 
         .step-item.active {
-            color: #fff;
+            color: #0f172a;
+            font-weight: 800;
         }
 
         .step-item.completed .step-num {
-            background: #22c55e;
-            border-color: #22c55e;
+            background: #16a34a;
+            border-color: #16a34a;
             color: #fff;
         }
 
         .step-item.completed {
-            color: #4ade80;
+            color: #16a34a;
         }
 
         .form-group {
-            margin-bottom: 1.1rem;
+            margin-bottom: 1.15rem;
             text-align: left;
         }
 
@@ -588,27 +591,34 @@ if (isset($_SESSION['otp_status_msg'])) {
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.6px;
-            color: #cbd5e1;
-            margin-bottom: 0.4rem;
+            color: #1e293b;
+            margin-bottom: 0.45rem;
         }
 
         .input-control {
             width: 100%;
             height: 44px;
-            background: var(--input-bg);
-            border: 1px solid var(--input-border);
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
             border-radius: 8px;
             padding: 0 1rem;
-            color: #f8fafc;
-            font-size: 0.92rem;
+            color: #0f172a;
+            font-size: 0.94rem;
+            font-weight: 600;
             outline: none;
             box-sizing: border-box;
             transition: all 0.2s ease;
         }
 
         .input-control:focus {
+            background: #ffffff;
             border-color: var(--accent-orange);
             box-shadow: 0 0 0 3px var(--accent-orange-glow);
+        }
+
+        .input-control::placeholder {
+            color: #94a3b8;
+            font-weight: 400;
         }
 
         .btn-submit {
@@ -647,20 +657,20 @@ if (isset($_SESSION['otp_status_msg'])) {
         }
 
         .alert-error {
-            background: rgba(239, 68, 68, 0.12);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #ff6b6b;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
         }
 
         .alert-success {
-            background: rgba(34, 197, 94, 0.12);
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            color: #4ade80;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
         }
 
         .masked-box {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
             border-radius: 10px;
             padding: 1rem;
             margin-bottom: 1.25rem;
@@ -675,8 +685,8 @@ if (isset($_SESSION['otp_status_msg'])) {
         }
 
         .masked-item:last-child { margin-bottom: 0; }
-        .masked-item .label { color: #94a3b8; font-weight: 600; }
-        .masked-item .val { color: #ffffff; font-family: monospace; font-weight: 700; }
+        .masked-item .label { color: #64748b; font-weight: 600; }
+        .masked-item .val { color: #0f172a; font-family: monospace; font-weight: 700; }
     </style>
 </head>
 
@@ -728,8 +738,11 @@ if (isset($_SESSION['otp_status_msg'])) {
         <div class="form-card">
             <!-- Header -->
             <div style="text-align: left; margin-bottom: 1.5rem;">
-                <h1 style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 800; color: #fff;">PASSWORD RECOVERY</h1>
-                <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 0.2rem;">Follow the 4-step sequence to safely reset your password</p>
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.35rem;">
+                    <div style="width: 5px; height: 26px; background: linear-gradient(180deg, #f59e0b 0%, #ef4444 100%); border-radius: 4px;"></div>
+                    <h1 style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.5px;">PASSWORD RECOVERY</h1>
+                </div>
+                <p style="color: #64748b; font-size: 0.85rem; margin-left: calc(5px + 0.75rem);">Follow the 4-step sequence to safely reset your password</p>
             </div>
 
             <!-- Step Indicators: ID -> OTP -> Security Question -> Password -->
@@ -771,10 +784,10 @@ if (isset($_SESSION['otp_status_msg'])) {
             <?php if ($step === 1): ?>
                 <form method="post" action="forgot_password.php?step=1">
                     <div class="form-group">
-                        <label class="form-label" for="idnoInput">Enter Registered ID Number <span style="color: #ff5500;">*</span></label>
+                        <label class="form-label" for="idnoInput">Enter Registered ID Number <span style="color: #ef4444;">*</span></label>
                         <div style="position: relative;">
                             <input type="password" name="idno" id="idnoInput" class="input-control" placeholder="e.g. 2026-0001" required autocomplete="off">
-                            <button type="button" id="toggleIdnoBtn" style="position: absolute; right: 10px; top: 12px; background: transparent; border: none; color: #94a3b8; cursor: pointer;">
+                            <button type="button" id="toggleIdnoBtn" style="position: absolute; right: 10px; top: 12px; background: transparent; border: none; color: #64748b; cursor: pointer;">
                                 <svg id="eyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             </button>
                         </div>
@@ -809,9 +822,9 @@ if (isset($_SESSION['otp_status_msg'])) {
 
                 <form method="post" action="forgot_password.php?step=2">
                     <div class="form-group">
-                        <label class="form-label" for="otpInput">Enter 6-Digit OTP Code <span style="color: #ff5500;">*</span></label>
-                        <input type="text" name="otp" id="otpInput" class="input-control" maxlength="6" placeholder="123456" required autocomplete="one-time-code" style="letter-spacing: 4px; font-size: 1.15rem; text-align: center; font-weight: 800; font-family: monospace;">
-                        <small style="color: #94a3b8; font-size: 0.76rem; margin-top: 4px; display: block;">The OTP code is valid for 10 minutes.</small>
+                        <label class="form-label" for="otpInput">Enter 6-Digit OTP Code <span style="color: #ef4444;">*</span></label>
+                        <input type="text" name="otp" id="otpInput" class="input-control" maxlength="6" placeholder="123456" required autocomplete="one-time-code" style="letter-spacing: 4px; font-size: 1.25rem; text-align: center; font-weight: 800; font-family: monospace; color: #0f172a; background: #ffffff;">
+                        <small style="color: #64748b; font-size: 0.76rem; margin-top: 4px; display: block;">The OTP code is valid for 10 minutes.</small>
                     </div>
 
                     <button type="submit" name="submit_otp" class="btn-submit">
@@ -821,7 +834,7 @@ if (isset($_SESSION['otp_status_msg'])) {
                 </form>
 
                 <form method="post" action="forgot_password.php?step=2" style="margin-top: 1rem;">
-                    <button type="submit" name="resend_otp" id="resendOtpBtn" class="btn-action" style="background: rgba(255,255,255,0.05); color: #94a3b8; width: 100%; padding: 0.6rem;">
+                    <button type="submit" name="resend_otp" id="resendOtpBtn" class="btn-action" style="background: #f1f5f9; border: 1.5px solid #cbd5e1; color: #475569; width: 100%; padding: 0.65rem; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: all 0.2s;">
                         Resend OTP Code
                     </button>
                 </form>
@@ -831,7 +844,7 @@ if (isset($_SESSION['otp_status_msg'])) {
             <?php if ($step === 3): ?>
                 <form method="post" action="forgot_password.php?step=3">
                     <div class="form-group">
-                        <label class="form-label">Security Question <span style="color: #ff5500;">*</span></label>
+                        <label class="form-label">Security Question <span style="color: #ef4444;">*</span></label>
                         <select name="security_question" class="input-control" style="cursor: pointer;" required>
                             <?php if (!empty($user_security_questions)): ?>
                                 <?php foreach ($user_security_questions as $idx => $sq): ?>
@@ -846,7 +859,7 @@ if (isset($_SESSION['otp_status_msg'])) {
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="securityAnswerInput">Your Answer <span style="color: #ff5500;">*</span></label>
+                        <label class="form-label" for="securityAnswerInput">Your Answer <span style="color: #ef4444;">*</span></label>
                         <input type="text" name="security_answer" id="securityAnswerInput" class="input-control" placeholder="Enter your registered answer" required autocomplete="off">
                     </div>
 
@@ -861,23 +874,23 @@ if (isset($_SESSION['otp_status_msg'])) {
             <?php if ($step === 4): ?>
                 <form method="post" action="forgot_password.php?step=4">
                     <div class="form-group">
-                        <label class="form-label" for="newPassword">New Password <span style="color: #ff5500;">*</span></label>
+                        <label class="form-label" for="newPassword">New Password <span style="color: #ef4444;">*</span></label>
                         <input type="password" name="new_password" id="newPassword" class="input-control" placeholder="Enter new password" required autocomplete="new-password">
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="confirmPassword">Confirm New Password <span style="color: #ff5500;">*</span></label>
+                        <label class="form-label" for="confirmPassword">Confirm New Password <span style="color: #ef4444;">*</span></label>
                         <input type="password" name="confirm_password" id="confirmPassword" class="input-control" placeholder="Re-type new password" required autocomplete="new-password">
                     </div>
 
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; font-size: 0.85rem; color: #94a3b8;">
-                        <input type="checkbox" id="toggleNewPwd" style="accent-color: #ff5500; width: 16px; height: 16px;">
-                        <label for="toggleNewPwd" style="cursor: pointer;">Show Passwords</label>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; font-size: 0.85rem; color: #475569;">
+                        <input type="checkbox" id="toggleNewPwd" style="accent-color: #f59e0b; width: 16px; height: 16px;">
+                        <label for="toggleNewPwd" style="cursor: pointer; font-weight: 600;">Show Passwords</label>
                     </div>
 
-                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.78rem; color: #94a3b8; text-align: left;">
-                        <div style="font-weight: 700; color: #cbd5e1; margin-bottom: 0.25rem;">Password Requirements:</div>
-                        <ul style="margin-left: 1.2rem; line-height: 1.4;">
+                    <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1.25rem; font-size: 0.8rem; color: #475569; text-align: left;">
+                        <div style="font-weight: 700; color: #0f172a; margin-bottom: 0.35rem;">Password Requirements:</div>
+                        <ul style="margin-left: 1.2rem; line-height: 1.5;">
                             <li>At least 8 characters long</li>
                             <li>Include uppercase & lowercase letters</li>
                             <li>Include at least 1 number and 1 special symbol</li>
@@ -903,7 +916,7 @@ if (isset($_SESSION['otp_status_msg'])) {
     </div>
 
     <!-- Footer -->
-    <footer style="text-align: center; padding: 1.5rem; color: #64748b; font-size: 0.85rem; border-top: 1px solid rgba(255,255,255,0.05); margin-top: auto;">
+    <footer style="text-align: center; padding: 1.5rem; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); font-size: 0.85rem; font-weight: 600; margin-top: auto;">
         <p>&copy; <?php echo date('Y'); ?> ONE PIECE System. All rights reserved.</p>
     </footer>
 </body>
