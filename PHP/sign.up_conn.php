@@ -79,6 +79,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!$is_gmail && !$is_university) {
         echo "<script>alert('Only Gmail (@gmail.com) and university email (@...edu.ph / @...edu) are allowed!'); location.href='registration.php';</script>";
         exit();
+    } elseif ($is_gmail && !empty($firstname) && !empty($lastname)) {
+        $local = strtolower(substr($email_clean, 0, strpos($email_clean, "@")));
+        $clean_fn = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $firstname));
+        $clean_ln = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $lastname));
+        $dot_fn = strtolower(preg_replace('/\s+/', '.', trim(preg_replace('/[^a-zA-Z0-9\s]/', '', $firstname))));
+        $dot_ln = strtolower(preg_replace('/\s+/', '.', trim(preg_replace('/[^a-zA-Z0-9\s]/', '', $lastname))));
+
+        $p1 = '/^' . preg_quote($clean_fn, '/') . '\.' . preg_quote($clean_ln, '/') . '[0-9]*$/';
+        $p2 = '/^' . preg_quote($dot_fn, '/') . '\.' . preg_quote($dot_ln, '/') . '[0-9]*$/';
+
+        if (!preg_match($p1, $local) && !preg_match($p2, $local)) {
+            $example = $clean_fn . '.' . $clean_ln . '@gmail.com';
+            echo "<script>alert('Gmail address must follow the standard: firstname.lastname@gmail.com (e.g., $example)'); location.href='registration.php';</script>";
+            exit();
+        }
     }
 
     // Check for existing username, email, and password

@@ -216,6 +216,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $is_university = (preg_match('/^[a-z0-9.-]+\.edu\.ph$/i', $email_domain) || preg_match('/^[a-z0-9.-]+\.edu$/i', $email_domain));
         if (!$is_gmail && !$is_university) {
             $errors[] = "Only Gmail (@gmail.com) and university email (@...edu.ph / @...edu) are allowed.";
+        } elseif ($is_gmail && !empty($firstname) && !empty($lastname)) {
+            $local = strtolower(substr($email, 0, strpos($email, "@")));
+            $clean_fn = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $firstname));
+            $clean_ln = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $lastname));
+            $dot_fn = strtolower(preg_replace('/\s+/', '.', trim(preg_replace('/[^a-zA-Z0-9\s]/', '', $firstname))));
+            $dot_ln = strtolower(preg_replace('/\s+/', '.', trim(preg_replace('/[^a-zA-Z0-9\s]/', '', $lastname))));
+
+            $p1 = '/^' . preg_quote($clean_fn, '/') . '\.' . preg_quote($clean_ln, '/') . '[0-9]*$/';
+            $p2 = '/^' . preg_quote($dot_fn, '/') . '\.' . preg_quote($dot_ln, '/') . '[0-9]*$/';
+
+            if (!preg_match($p1, $local) && !preg_match($p2, $local)) {
+                $example = $clean_fn . '.' . $clean_ln . '@gmail.com';
+                $errors[] = "Gmail address must follow the standard: firstname.lastname@gmail.com (e.g., $example).";
+            }
         }
     }
 
@@ -1220,7 +1234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 Email Address <span class="req-star">*</span>
                             </label>
                             <input type="email" name="email" id="email" class="input-control"
-                                placeholder="name@gmail.com or name@csucc.edu.ph"
+                                placeholder="firstname.lastname@gmail.com or name@csucc.edu.ph"
                                 value="<?php echo htmlspecialchars($email); ?>">
                             <small class="error-msg" id="email_error"></small>
                         </div>
@@ -1934,6 +1948,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!isGmail && !isUniversity) {
                     setFieldError("email", "Only Gmail (@gmail.com) and university email (@...edu.ph / @...edu) are allowed.");
                     return false;
+                }
+
+                if (isGmail) {
+                    var fnEl = document.getElementById("firstname");
+                    var lnEl = document.getElementById("lastname");
+                    var fnVal = fnEl ? fnEl.value.trim() : "";
+                    var lnVal = lnEl ? lnEl.value.trim() : "";
+
+                    if (fnVal && lnVal) {
+                        var local = parts[0];
+                        var cleanFn = fnVal.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        var cleanLn = lnVal.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        var dotFn = fnVal.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '.');
+                        var dotLn = lnVal.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '.');
+
+                        var escapeRegex = function(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); };
+                        var r1 = new RegExp('^' + escapeRegex(cleanFn) + '\\.' + escapeRegex(cleanLn) + '[0-9]*$');
+                        var r2 = new RegExp('^' + escapeRegex(dotFn) + '\\.' + escapeRegex(dotLn) + '[0-9]*$');
+
+                        if (!r1.test(local) && !r2.test(local)) {
+                            var example = cleanFn + '.' + cleanLn + '@gmail.com';
+                            setFieldError("email", "Gmail address must follow the standard: firstname.lastname@gmail.com (e.g., " + example + ").");
+                            return false;
+                        }
+                    }
                 }
             }
 

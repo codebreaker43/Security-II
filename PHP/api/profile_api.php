@@ -217,6 +217,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         echo json_encode(['error' => 'Only Gmail (@gmail.com) and university email (@...edu.ph / @...edu) are allowed.']);
         exit();
     }
+    if ($is_gmail && !empty($firstname) && !empty($lastname)) {
+        $local = strtolower(substr($email, 0, strpos($email, "@")));
+        $clean_fn = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $firstname));
+        $clean_ln = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $lastname));
+        $dot_fn = strtolower(preg_replace('/\s+/', '.', trim(preg_replace('/[^a-zA-Z0-9\s]/', '', $firstname))));
+        $dot_ln = strtolower(preg_replace('/\s+/', '.', trim(preg_replace('/[^a-zA-Z0-9\s]/', '', $lastname))));
+
+        $p1 = '/^' . preg_quote($clean_fn, '/') . '\.' . preg_quote($clean_ln, '/') . '[0-9]*$/';
+        $p2 = '/^' . preg_quote($dot_fn, '/') . '\.' . preg_quote($dot_ln, '/') . '[0-9]*$/';
+
+        if (!preg_match($p1, $local) && !preg_match($p2, $local)) {
+            $example = $clean_fn . '.' . $clean_ln . '@gmail.com';
+            http_response_code(400);
+            echo json_encode(['error' => "Gmail address must follow the standard: firstname.lastname@gmail.com (e.g., $example)."]);
+            exit();
+        }
+    }
     $stmt_dup = mysqli_prepare($conn, "SELECT id FROM user WHERE email = ? AND id != ? LIMIT 1");
     mysqli_stmt_bind_param($stmt_dup, "si", $email, $user_id);
     mysqli_stmt_execute($stmt_dup);

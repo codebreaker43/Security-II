@@ -483,7 +483,7 @@ if (!$is_profile_complete) {
                             </div>
                             <div style="grid-column: 1 / -1;">
                                 <span class="profile-label">Email Address *</span>
-                                <input type="email" class="profile-input" id="email" readonly required>
+                                <input type="email" class="profile-input" id="email" placeholder="firstname.lastname@gmail.com or name@csucc.edu.ph" readonly required>
                                 <small class="error-msg" id="email_error"></small>
                             </div>
                             <div>
@@ -1171,6 +1171,31 @@ if (!$is_profile_complete) {
                 if (!isGmail && !isUniversity) {
                     setProfileFieldError("email", "Only Gmail (@gmail.com) and university email (@...edu.ph / @...edu) are allowed.");
                     return false;
+                }
+
+                if (isGmail) {
+                    const fnEl = document.getElementById("firstname");
+                    const lnEl = document.getElementById("lastname");
+                    const fnVal = fnEl ? fnEl.value.trim() : "";
+                    const lnVal = lnEl ? lnEl.value.trim() : "";
+
+                    if (fnVal && lnVal) {
+                        const local = parts[0];
+                        const cleanFn = fnVal.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        const cleanLn = lnVal.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        const dotFn = fnVal.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '.');
+                        const dotLn = lnVal.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '.');
+
+                        const escapeRegex = function(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); };
+                        const r1 = new RegExp('^' + escapeRegex(cleanFn) + '\\.' + escapeRegex(cleanLn) + '[0-9]*$');
+                        const r2 = new RegExp('^' + escapeRegex(dotFn) + '\\.' + escapeRegex(dotLn) + '[0-9]*$');
+
+                        if (!r1.test(local) && !r2.test(local)) {
+                            const example = cleanFn + '.' + cleanLn + '@gmail.com';
+                            setProfileFieldError("email", "Gmail address must follow the standard: firstname.lastname@gmail.com (e.g., " + example + ").");
+                            return false;
+                        }
+                    }
                 }
             }
             clearSingleProfileFieldError("email");

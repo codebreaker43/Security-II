@@ -769,6 +769,31 @@ function checkEmail(showEmpty) {
             setFieldError("email", "Only Gmail (@gmail.com) and university email (@...edu.ph / @...edu) are allowed.");
             return false;
         }
+
+        if (isGmail) {
+            var fnEl = document.getElementById("firstname");
+            var lnEl = document.getElementById("lastname");
+            var fnVal = fnEl ? fnEl.value.trim() : "";
+            var lnVal = lnEl ? lnEl.value.trim() : "";
+
+            if (fnVal && lnVal) {
+                var local = parts[0];
+                var cleanFn = fnVal.toLowerCase().replace(/[^a-z0-9]/g, '');
+                var cleanLn = lnVal.toLowerCase().replace(/[^a-z0-9]/g, '');
+                var dotFn = fnVal.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '.');
+                var dotLn = lnVal.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '.');
+
+                var escapeRegex = function(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); };
+                var r1 = new RegExp('^' + escapeRegex(cleanFn) + '\\.' + escapeRegex(cleanLn) + '[0-9]*$');
+                var r2 = new RegExp('^' + escapeRegex(dotFn) + '\\.' + escapeRegex(dotLn) + '[0-9]*$');
+
+                if (!r1.test(local) && !r2.test(local)) {
+                    var example = cleanFn + '.' + cleanLn + '@gmail.com';
+                    setFieldError("email", "Gmail address must follow the standard: firstname.lastname@gmail.com (e.g., " + example + ").");
+                    return false;
+                }
+            }
+        }
     }
 
     if (!isValidEmail(val)) {
