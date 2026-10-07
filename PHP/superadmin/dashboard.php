@@ -150,7 +150,11 @@ $total_users = ($total_result && mysqli_num_rows($total_result) > 0) ? mysqli_fe
         }
 
         .hero p {
-            color: #cbd5e1 !important;
+            color: #ffffff !important;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
+            margin-bottom: 2rem;
         }
 
         .metric-card {
@@ -205,7 +209,8 @@ $total_users = ($total_result && mysqli_num_rows($total_result) > 0) ? mysqli_fe
 
         .metric-card small {
             font-size: 0.9rem;
-            color: #64748b;
+            color: #334155;
+            font-weight: 700;
             margin-top: 0.5rem;
         }
 

@@ -35,20 +35,29 @@ $can_approve = in_array('approve_users', $privileges);
     <style>
         body {
             background-image:
-                linear-gradient(rgba(240, 245, 255, 0.65), rgba(248, 250, 252, 0.80)),
+                linear-gradient(rgba(10, 15, 25, 0.20), rgba(10, 15, 25, 0.35)),
                 url('../../img/one_piece_bg.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
+            color: #ffffff;
         }
 
         h1 {
             font-size: 2.5rem;
             font-weight: 800;
-            color: #0f172a;
+            color: #ffffff;
             margin-bottom: 0.5rem;
             letter-spacing: -0.5px;
-            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+        }
+
+        .page-subtitle {
+            color: #ffffff !important;
+            font-size: 1.05rem;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85);
+            margin-top: 0.25rem;
         }
 
         .filter-toolbar {
@@ -478,7 +487,7 @@ $can_approve = in_array('approve_users', $privileges);
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <div>
                 <h1>User Management</h1>
-                <p style="color: #94a3b8; font-size: 0.95rem;">Manage registered user accounts</p>
+                <p class="page-subtitle" style="color: #ffffff; font-size: 1.05rem; font-weight: 600; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85); margin-top: 0.25rem;">Manage registered user accounts</p>
             </div>
             <?php if ($can_create_users): ?>
             <button class="btn-create-user" onclick="openCreateUserModal()">
@@ -568,8 +577,8 @@ $can_approve = in_array('approve_users', $privileges);
                     <!-- Password Strength Bar (hidden initially when blank) -->
                     <div id="createPasswordStrengthWrap" style="margin-top: 8px; display: none;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                            <span style="font-size: 0.73rem; color: #94a3b8;">Password Strength:</span>
-                            <span id="createStrengthLabel" style="font-size: 0.75rem; font-weight: 700; color: #94a3b8;">Weak</span>
+                            <span style="font-size: 0.75rem; color: #cbd5e1; font-weight: 600;">Password Strength:</span>
+                            <span id="createStrengthLabel" style="font-size: 0.75rem; font-weight: 700; color: #cbd5e1;">Weak</span>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; height: 5px;">
                             <div id="createBar1" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
@@ -577,9 +586,9 @@ $can_approve = in_array('approve_users', $privileges);
                             <div id="createBar3" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
                             <div id="createBar4" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
                         </div>
-                        <small style="color: #94a3b8; font-size: 0.72rem; display: block; margin-top: 5px;">Must be at least 8 characters with uppercase, number, and special character.</small>
+                        <small style="color: #cbd5e1; font-size: 0.75rem; font-weight: 500; display: block; margin-top: 5px;">Must be at least 8 characters with uppercase, number, and special character.</small>
                     </div>
-                    <small style="color: #94a3b8; font-size: 0.75rem; display: block; margin-top: 4px;">User will be prompted to change password on first login.</small>
+                    <small style="color: #cbd5e1; font-size: 0.78rem; font-weight: 500; display: block; margin-top: 4px;">User will be prompted to change password on first login.</small>
                     <small class="error-msg" id="createPassword_error"></small>
                 </div>
 

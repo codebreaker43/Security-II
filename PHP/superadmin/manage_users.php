@@ -35,7 +35,15 @@ enforce_profile_completion($conn);
             color: #ffffff;
             margin-bottom: 0.5rem;
             letter-spacing: -0.5px;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+        }
+
+        .page-subtitle {
+            color: #ffffff !important;
+            font-size: 1.05rem;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85);
+            margin-top: 0.25rem;
         }
 
         .filter-toolbar {
@@ -107,11 +115,11 @@ enforce_profile_completion($conn);
         }
 
         .filter-group label {
-            font-size: 0.82rem;
-            color: #475569;
-            font-weight: 700;
+            font-size: 0.84rem;
+            color: #1e293b;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
         }
 
         .filter-group select {
@@ -555,7 +563,7 @@ enforce_profile_completion($conn);
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <div>
                 <h1>Account Management</h1>
-                <p style="color: #64748b; font-size: 0.95rem;">Unified management for Users, Admins, and Super Admins</p>
+                <p class="page-subtitle" style="color: #ffffff; font-size: 1.05rem; font-weight: 600; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85); margin-top: 0.25rem;">Unified management for Users, Admins, and Super Admins</p>
             </div>
             <button class="btn-create-account" onclick="openCreateAccountModal()">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -624,8 +632,8 @@ enforce_profile_completion($conn);
             </div>
             <form id="createAccountForm" onsubmit="handleCreateAccount(event)" novalidate>
                 <div class="form-group-modal">
-                    <label>ID Number <span style="color: #64748b; font-size: 0.75rem; font-weight: normal;">(Auto-generated)</span></label>
-                    <input type="text" id="createIdNo" class="form-control-modal" readonly placeholder="Generating..." style="background: #f1f5f9; color: #475569; cursor: not-allowed; font-family: monospace;">
+                    <label>ID Number <span style="color: #cbd5e1; font-size: 0.78rem; font-weight: 600;">(Auto-generated)</span></label>
+                    <input type="text" id="createIdNo" class="form-control-modal" readonly placeholder="Generating..." style="background: #f1f5f9; color: #334155; font-weight: 700; cursor: not-allowed; font-family: monospace;">
                     <small class="error-msg" id="createIdNo_error"></small>
                 </div>
 
@@ -649,7 +657,7 @@ enforce_profile_completion($conn);
                     <label>Password <span style="color: #ef4444;">*</span></label>
                     <div style="position: relative;">
                         <input type="password" id="createPassword" class="form-control-modal" value="" placeholder="Enter password" style="padding-right: 2.5rem; font-family: monospace;" oninput="checkCreatePasswordStrength()" onblur="checkCreatePassword(true)">
-                        <button type="button" class="password-toggle-btn" onclick="toggleCreatePasswordVisibility(this)" aria-label="Toggle password visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0; display: flex; align-items: center;">
+                        <button type="button" class="password-toggle-btn" onclick="toggleCreatePasswordVisibility(this)" aria-label="Toggle password visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #cbd5e1; cursor: pointer; padding: 0; display: flex; align-items: center;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         </button>
                     </div>
@@ -657,8 +665,8 @@ enforce_profile_completion($conn);
                     <!-- Password Strength Bar (hidden initially when blank) -->
                     <div id="createPasswordStrengthWrap" style="margin-top: 8px; display: none;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                            <span style="font-size: 0.73rem; color: #64748b;">Password Strength:</span>
-                            <span id="createStrengthLabel" style="font-size: 0.75rem; font-weight: 700; color: #64748b;">Weak</span>
+                            <span style="font-size: 0.75rem; color: #cbd5e1; font-weight: 600;">Password Strength:</span>
+                            <span id="createStrengthLabel" style="font-size: 0.75rem; font-weight: 700; color: #cbd5e1;">Weak</span>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; height: 5px;">
                             <div id="createBar1" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
@@ -666,9 +674,9 @@ enforce_profile_completion($conn);
                             <div id="createBar3" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
                             <div id="createBar4" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
                         </div>
-                        <small style="color: #64748b; font-size: 0.72rem; display: block; margin-top: 5px;">Must be at least 8 characters with uppercase, number, and special character.</small>
+                        <small style="color: #cbd5e1; font-size: 0.75rem; font-weight: 500; display: block; margin-top: 5px;">Must be at least 8 characters with uppercase, number, and special character.</small>
                     </div>
-                    <small style="color: #64748b; font-size: 0.75rem; display: block; margin-top: 4px;">User will be prompted to change password on first login.</small>
+                    <small style="color: #cbd5e1; font-size: 0.78rem; font-weight: 500; display: block; margin-top: 4px;">User will be prompted to change password on first login.</small>
                     <small class="error-msg" id="createPassword_error"></small>
                 </div>
 
@@ -755,13 +763,13 @@ enforce_profile_completion($conn);
                 <input type="hidden" id="editUserId">
 
                 <div class="form-group-modal">
-                    <label>ID Number <span style="color: #64748b; font-size: 0.75rem; font-weight: normal;">(Cannot be modified)</span></label>
-                    <input type="text" id="editIdNo" class="form-control-modal" readonly style="background: #f1f5f9; color: #475569; cursor: not-allowed; font-family: monospace;" required>
+                    <label>ID Number <span style="color: #cbd5e1; font-size: 0.78rem; font-weight: 600;">(Cannot be modified)</span></label>
+                    <input type="text" id="editIdNo" class="form-control-modal" readonly style="background: #f1f5f9; color: #334155; font-weight: 700; cursor: not-allowed; font-family: monospace;" required>
                 </div>
 
                 <div class="form-group-modal">
                     <label>Full Name <span style="color: #ef4444;">*</span></label>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <div style="grid-template-columns: 1fr 1fr; gap: 0.5rem; display: grid;">
                         <div>
                             <input type="text" id="editFirstName" class="form-control-modal" placeholder="First Name" required maxlength="25" oninput="checkEditFirstName(false)" onblur="checkEditFirstName(true)">
                             <small class="error-msg" id="editFirstName_error"></small>
@@ -774,15 +782,15 @@ enforce_profile_completion($conn);
                 </div>
 
                 <div class="form-group-modal">
-                    <label>Username <span style="color: #64748b; font-size: 0.75rem; font-weight: normal;">(Cannot be modified)</span></label>
-                    <input type="text" id="editUsername" class="form-control-modal" readonly style="background: #f1f5f9; color: #475569; cursor: not-allowed;" required>
+                    <label>Username <span style="color: #cbd5e1; font-size: 0.78rem; font-weight: 600;">(Cannot be modified)</span></label>
+                    <input type="text" id="editUsername" class="form-control-modal" readonly style="background: #f1f5f9; color: #334155; font-weight: 700; cursor: not-allowed;" required>
                 </div>
 
                 <div class="form-group-modal">
-                    <label>Reset Password <span style="color: #64748b; font-size: 0.75rem; font-weight: normal;">(Leave blank to keep unchanged)</span></label>
+                    <label>Reset Password <span style="color: #cbd5e1; font-size: 0.78rem; font-weight: 600;">(Leave blank to keep unchanged)</span></label>
                     <div style="position: relative;">
                         <input type="password" id="editPassword" class="form-control-modal" placeholder="Enter new password if resetting" style="padding-right: 2.5rem;" oninput="checkEditPasswordStrength()">
-                        <button type="button" class="password-toggle-btn" onclick="toggleEditPasswordVisibility(this)" aria-label="Toggle password visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0; display: flex; align-items: center;">
+                        <button type="button" class="password-toggle-btn" onclick="toggleEditPasswordVisibility(this)" aria-label="Toggle password visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #cbd5e1; cursor: pointer; padding: 0; display: flex; align-items: center;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         </button>
                     </div>
@@ -790,8 +798,8 @@ enforce_profile_completion($conn);
                     <!-- Password Strength Bar -->
                     <div id="editPasswordStrengthWrap" style="margin-top: 8px; display: none;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                            <span style="font-size: 0.73rem; color: #64748b;">Password Strength:</span>
-                            <span id="editStrengthLabel" style="font-size: 0.75rem; font-weight: 700; color: #64748b;">Weak</span>
+                            <span style="font-size: 0.75rem; color: #cbd5e1; font-weight: 600;">Password Strength:</span>
+                            <span id="editStrengthLabel" style="font-size: 0.75rem; font-weight: 700; color: #cbd5e1;">Weak</span>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; height: 5px;">
                             <div id="editBar1" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
@@ -799,7 +807,7 @@ enforce_profile_completion($conn);
                             <div id="editBar3" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
                             <div id="editBar4" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
                         </div>
-                        <small style="color: #64748b; font-size: 0.72rem; display: block; margin-top: 5px;">Must be at least 8 characters with uppercase, number, and special character.</small>
+                        <small style="color: #cbd5e1; font-size: 0.75rem; font-weight: 500; display: block; margin-top: 5px;">Must be at least 8 characters with uppercase, number, and special character.</small>
                     </div>
                     <small class="error-msg" id="editPassword_error"></small>
                 </div>
@@ -862,7 +870,7 @@ enforce_profile_completion($conn);
                     <label>Reason <span style="color: #ef4444;">*</span></label>
                     <textarea id="actionReason" class="form-control-modal" placeholder="Enter reason for this action..." rows="2"></textarea>
                     
-                    <label style="margin-top: 0.85rem; display: block; font-size: 0.82rem; color: #334155;">Attach Supporting File / Document <span style="color: #64748b; font-weight: normal; font-size: 0.75rem;">(Optional)</span></label>
+                    <label style="margin-top: 0.85rem; display: block; font-size: 0.84rem; font-weight: 700; color: #1e293b;">Attach Supporting File / Document <span style="color: #64748b; font-weight: normal; font-size: 0.75rem;">(Optional)</span></label>
                     <input type="file" id="actionFile" class="form-control-modal" style="padding: 0.45rem 0.6rem; font-size: 0.82rem; color: #334155; background: #ffffff; border: 1px solid #cbd5e1;" accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.txt">
                 </div>
 

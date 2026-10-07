@@ -177,20 +177,21 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
     <style>
         body {
             background-image:
-                linear-gradient(rgba(240, 245, 255, 0.65), rgba(248, 250, 252, 0.80)),
+                linear-gradient(rgba(10, 15, 25, 0.20), rgba(10, 15, 25, 0.35)),
                 url('../../img/one_piece_bg.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
+            color: #ffffff;
         }
 
         h1 {
             font-size: 2.5rem;
-            font-weight: 700;
-            color: #0f172a;
+            font-weight: 800;
+            color: #ffffff;
             margin-bottom: 0.5rem;
             letter-spacing: -0.5px;
-            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
         }
 
         /* ---- Filter Bar ---- */
@@ -524,7 +525,7 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <div>
                 <h1>System Audit Logs</h1>
-                <p style="color: #64748b; margin: 0; font-size: 0.95rem;">Tracking user authentication and system activities.</p>
+                <p style="color: #ffffff; margin: 0; font-size: 1.05rem; font-weight: 600; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85); margin-top: 0.25rem;">Tracking user authentication and system activities.</p>
             </div>
         </div>
 

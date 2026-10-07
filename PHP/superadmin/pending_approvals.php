@@ -429,7 +429,7 @@ include("../db.php");
                 <div class="page-header-row">
                     <div>
                         <h1>Pending Approvals</h1>
-                        <p style="color: #cbd5e1; margin: 0; font-size: 0.95rem; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);">Review, inspect applicant registration details, and approve or reject accounts.</p>
+                        <p style="color: #ffffff; margin: 0; font-size: 1.05rem; font-weight: 600; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85); margin-top: 0.25rem;">Review, inspect applicant registration details, and approve or reject accounts.</p>
                     </div>
                     <div>
                         <span class="pending-count-chip" id="pendingChip">

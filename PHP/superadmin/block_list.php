@@ -39,10 +39,11 @@ enforce_profile_completion($conn);
         }
 
         .main-content > p {
-            color: #cbd5e1;
-            font-size: 0.95rem;
+            color: #ffffff;
+            font-size: 1.05rem;
+            font-weight: 600;
             margin-bottom: 1.25rem;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85);
         }
 
         .search-container {

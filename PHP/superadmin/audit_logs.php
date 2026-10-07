@@ -141,26 +141,29 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
     <style>
         body {
             background-image:
-                linear-gradient(rgba(240, 245, 255, 0.65), rgba(248, 250, 252, 0.80)),
+                linear-gradient(rgba(10, 15, 25, 0.20), rgba(10, 15, 25, 0.35)),
                 url('../../img/one_piece_bg.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
+            color: #ffffff;
         }
 
         /* Luminous One Piece Theme */
         h1 {
             font-size: 2.2rem;
             font-weight: 800;
-            color: #0f172a;
+            color: #ffffff;
             margin-bottom: 0.35rem;
             letter-spacing: -0.5px;
-            text-shadow: 0 1px 3px rgba(255, 255, 255, 0.8);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
         }
 
         .main-content p {
-            color: #475569;
-            font-weight: 500;
+            color: #ffffff !important;
+            font-size: 1.05rem;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85);
         }
 
         /* ---- Filter Bar ---- */

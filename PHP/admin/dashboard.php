@@ -160,8 +160,11 @@ if ($can_view_users) {
         }
 
         .hero p {
-            color: #cbd5e1;
-            font-weight: 500;
+            color: #ffffff !important;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
+            margin-bottom: 2rem;
         }
 
         .metric-card {
@@ -215,8 +218,9 @@ if ($can_view_users) {
         }
 
         .metric-card small {
-            font-size: 0.85rem;
-            color: #64748b;
+            font-size: 0.88rem;
+            color: #334155;
+            font-weight: 700;
             margin-top: 0.5rem;
         }
 

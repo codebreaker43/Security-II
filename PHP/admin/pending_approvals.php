@@ -465,7 +465,7 @@ if (!$can_approve) {
                 <div class="page-header-row">
                     <div>
                         <h1>Pending User Approvals</h1>
-                        <p style="color: #cbd5e1; margin: 0; font-size: 0.95rem; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);">Review and approve newly registered customer accounts.</p>
+                        <p style="color: #ffffff; margin: 0; font-size: 1.05rem; font-weight: 600; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85); margin-top: 0.25rem;">Review and approve newly registered customer accounts.</p>
                     </div>
                     <div>
                         <span class="pending-count-chip" id="pendingChip">
