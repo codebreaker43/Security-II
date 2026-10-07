@@ -58,12 +58,11 @@ $can_approve = in_array('approve_users', $privileges);
             align-items: center;
             justify-content: space-between;
             margin-bottom: 1.5rem;
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(245, 158, 11, 0.35);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 14px;
             padding: 1rem 1.25rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 0 15px rgba(245, 158, 11, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }
 
         .search-input-wrapper {
@@ -168,13 +167,12 @@ $can_approve = in_array('approve_users', $privileges);
 
         /* Table */
         .table-card {
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(245, 158, 11, 0.35);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 14px;
             padding: 1.5rem;
             overflow-x: auto;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 0 15px rgba(245, 158, 11, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
         }
 
         .styled-table {

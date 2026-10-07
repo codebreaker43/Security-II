@@ -154,16 +154,14 @@ $total_users = ($total_result && mysqli_num_rows($total_result) > 0) ? mysqli_fe
         }
 
         .metric-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.08) 100%);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 14px;
             padding: 1.5rem;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
             position: relative;
             overflow: hidden;
@@ -172,8 +170,8 @@ $total_users = ($total_result && mysqli_num_rows($total_result) > 0) ? mysqli_fe
 
         .metric-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 20px 45px rgba(245, 158, 11, 0.3);
-            border-color: #fbbf24;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+            border-color: #f59e0b;
         }
 
         .metric-card::before {
@@ -189,10 +187,9 @@ $total_users = ($total_result && mysqli_num_rows($total_result) > 0) ? mysqli_fe
         }
 
         .metric-card h3 {
-            font-size: 1.05rem;
-            color: #fbbf24;
-            text-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
-            font-weight: 700;
+            font-size: 0.92rem;
+            color: #d97706;
+            font-weight: 800;
             margin-bottom: 0.5rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -201,15 +198,14 @@ $total_users = ($total_result && mysqli_num_rows($total_result) > 0) ? mysqli_fe
         .metric-card p {
             font-size: 2.5rem;
             font-weight: 800;
-            color: #ffffff;
+            color: #0f172a;
             margin: 0.2rem 0;
             line-height: 1.2;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
         }
 
         .metric-card small {
             font-size: 0.9rem;
-            color: #cbd5e1;
+            color: #64748b;
             margin-top: 0.5rem;
         }
 

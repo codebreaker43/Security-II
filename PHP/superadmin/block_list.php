@@ -53,37 +53,36 @@ enforce_profile_completion($conn);
             width: 100%;
             padding: 0.85rem 1.25rem;
             border-radius: 12px;
-            border: 1.5px solid rgba(255, 255, 255, 0.25);
-            background: rgba(8, 12, 22, 0.75);
-            backdrop-filter: blur(12px);
-            color: #ffffff !important;
+            border: 1.5px solid #cbd5e1;
+            background: #ffffff;
+            color: #0f172a !important;
             font-size: 0.95rem;
             font-weight: 600;
             outline: none;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
         }
 
         .search-container input::placeholder {
-            color: #94a3b8 !important;
+            color: #64748b !important;
             font-weight: 500;
         }
 
         .search-container input:focus {
-            border-color: #fbbf24 !important;
-            background: rgba(15, 23, 42, 0.95) !important;
-            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35) !important;
+            border-color: #f59e0b !important;
+            background: #ffffff !important;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2) !important;
         }
 
+        /* Solid White Table Card */
         .table-container {
             width: 100%;
             margin-top: 1rem;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.08) 100%);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
         }
 
         .table-wrapper {
@@ -96,23 +95,23 @@ enforce_profile_completion($conn);
         }
 
         th {
-            background: rgba(245, 158, 11, 0.2);
-            color: #fbbf24;
+            background: #f8fafc;
+            color: #334155;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.9px;
             font-size: 0.8rem;
             padding: 1rem 1.1rem;
             text-align: left;
-            border-bottom: 2px solid rgba(245, 158, 11, 0.4);
-            text-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+            border-bottom: 2px solid #e2e8f0;
+            text-shadow: none;
         }
 
         td {
             padding: 0.95rem 1.1rem;
-            color: #ffffff;
+            color: #1e293b;
             text-align: left;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            border-bottom: 1px solid #f1f5f9;
             font-size: 0.9rem;
             white-space: nowrap;
             overflow: hidden;
@@ -120,11 +119,11 @@ enforce_profile_completion($conn);
         }
 
         tr:nth-child(even) {
-            background: rgba(255, 255, 255, 0.03);
+            background: #f8fafc;
         }
 
         tr:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: #f1f5f9;
         }
 
         .action-buttons {

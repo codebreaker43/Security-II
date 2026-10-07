@@ -45,13 +45,11 @@ enforce_profile_completion($conn);
             align-items: center;
             justify-content: space-between;
             margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.08) 100%);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 14px;
             padding: 1rem 1.25rem;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }
 
         .search-input-wrapper {
@@ -67,7 +65,7 @@ enforce_profile_completion($conn);
             left: 1rem;
             width: 18px;
             height: 18px;
-            stroke: #cbd5e1;
+            stroke: #64748b;
             pointer-events: none;
         }
 
@@ -75,10 +73,9 @@ enforce_profile_completion($conn);
             width: 100%;
             padding: 0.8rem 1rem 0.8rem 2.8rem;
             border-radius: 10px;
-            border: 1.5px solid rgba(255, 255, 255, 0.25);
-            background: rgba(8, 12, 22, 0.75);
-            backdrop-filter: blur(12px);
-            color: #ffffff !important;
+            border: 1.5px solid #cbd5e1;
+            background: #f8fafc;
+            color: #0f172a !important;
             font-size: 0.92rem;
             font-weight: 600;
             outline: none;
@@ -86,14 +83,14 @@ enforce_profile_completion($conn);
         }
 
         .search-input-wrapper input::placeholder {
-            color: #94a3b8 !important;
+            color: #64748b !important;
             font-weight: 500;
         }
 
         .search-input-wrapper input:focus {
-            border-color: #fbbf24 !important;
-            background: rgba(15, 23, 42, 0.95) !important;
-            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35) !important;
+            border-color: #f59e0b !important;
+            background: #ffffff !important;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2) !important;
         }
 
         .filter-controls {
@@ -111,8 +108,7 @@ enforce_profile_completion($conn);
 
         .filter-group label {
             font-size: 0.82rem;
-            color: #fbbf24;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            color: #475569;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -121,10 +117,9 @@ enforce_profile_completion($conn);
         .filter-group select {
             padding: 0.7rem 1rem;
             border-radius: 10px;
-            border: 1.5px solid rgba(255, 255, 255, 0.25);
-            background: rgba(8, 12, 22, 0.75);
-            backdrop-filter: blur(12px);
-            color: #ffffff !important;
+            border: 1.5px solid #cbd5e1;
+            background: #f8fafc;
+            color: #0f172a !important;
             font-size: 0.88rem;
             font-weight: 600;
             cursor: pointer;
@@ -133,14 +128,14 @@ enforce_profile_completion($conn);
         }
 
         .filter-group select:focus {
-            border-color: #fbbf24 !important;
-            background: rgba(15, 23, 42, 0.95) !important;
-            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35) !important;
+            border-color: #f59e0b !important;
+            background: #ffffff !important;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2) !important;
         }
 
         .filter-group select option {
-            background: #0f172a !important;
-            color: #ffffff !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
             font-weight: 600;
             padding: 8px 12px;
         }
@@ -167,16 +162,14 @@ enforce_profile_completion($conn);
             box-shadow: 0 6px 20px rgba(245, 158, 11, 0.55);
         }
 
-        /* Table Styles - One Piece Theme */
+        /* Table Styles - Solid White Card */
         .table-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.08) 100%);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 16px;
             padding: 1.5rem;
             overflow-x: auto;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
         }
 
         .styled-table {
@@ -186,26 +179,26 @@ enforce_profile_completion($conn);
         }
 
         .styled-table th {
-            background: rgba(245, 158, 11, 0.2);
+            background: #f8fafc;
             padding: 1rem 1.1rem;
             font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 0.9px;
-            color: #fbbf24;
+            color: #334155;
             font-weight: 800;
-            border-bottom: 2px solid rgba(245, 158, 11, 0.4);
-            text-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+            border-bottom: 2px solid #e2e8f0;
+            text-shadow: none;
         }
 
         .styled-table td {
             padding: 0.95rem 1.1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            border-bottom: 1px solid #f1f5f9;
             font-size: 0.9rem;
-            color: #ffffff;
+            color: #1e293b;
         }
 
         .styled-table tr:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: #f8fafc;
         }
 
         .badge {
@@ -219,39 +212,35 @@ enforce_profile_completion($conn);
         }
 
         .badge-role-superadmin { 
-            background: rgba(239, 68, 68, 0.2); 
-            color: #fca5a5; 
-            border: 1px solid rgba(239, 68, 68, 0.4); 
-            box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
+            background: #fee2e2; 
+            color: #991b1b; 
+            border: 1px solid #fecaca; 
         }
         .badge-role-admin { 
-            background: rgba(14, 165, 233, 0.2); 
-            color: #7dd3fc; 
-            border: 1px solid rgba(14, 165, 233, 0.4); 
-            box-shadow: 0 0 8px rgba(14, 165, 233, 0.2);
+            background: #e0f2fe; 
+            color: #0369a1; 
+            border: 1px solid #bae6fd; 
         }
         .badge-role-user { 
-            background: rgba(16, 185, 129, 0.2); 
-            color: #86efac; 
-            border: 1px solid rgba(16, 185, 129, 0.4); 
-            box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+            background: #dcfce7; 
+            color: #15803d; 
+            border: 1px solid #bbf7d0; 
         }
 
         .badge-status-active { 
-            background: rgba(34, 197, 94, 0.2); 
-            color: #86efac; 
-            border: 1px solid rgba(34, 197, 94, 0.4); 
-            box-shadow: 0 0 8px rgba(34, 197, 94, 0.2);
+            background: #dcfce7; 
+            color: #15803d; 
+            border: 1px solid #bbf7d0; 
         }
         .badge-status-blocked { 
-            background: rgba(239, 68, 68, 0.2); 
-            color: #fca5a5; 
-            border: 1px solid rgba(239, 68, 68, 0.4); 
+            background: #fee2e2; 
+            color: #991b1b; 
+            border: 1px solid #fecaca; 
         }
         .badge-status-inactive { 
-            background: rgba(255, 255, 255, 0.12); 
-            color: #cbd5e1; 
-            border: 1px solid rgba(255, 255, 255, 0.25); 
+            background: #f1f5f9; 
+            color: #475569; 
+            border: 1px solid #e2e8f0; 
         }
 
         .action-btn-group {
@@ -271,22 +260,21 @@ enforce_profile_completion($conn);
             text-decoration: none;
         }
 
-        .btn-view { background: rgba(14, 165, 233, 0.2); color: #7dd3fc; border-color: rgba(14, 165, 233, 0.4); }
-        .btn-view:hover { background: rgba(14, 165, 233, 0.35); color: #ffffff; }
-        .btn-edit { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: rgba(245, 158, 11, 0.4); }
-        .btn-edit:hover { background: rgba(245, 158, 11, 0.35); color: #ffffff; }
-        .btn-block { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border-color: rgba(239, 68, 68, 0.4); }
-        .btn-block:hover { background: rgba(239, 68, 68, 0.35); color: #ffffff; }
-        .btn-unblock { background: rgba(34, 197, 94, 0.2); color: #86efac; border-color: rgba(34, 197, 94, 0.4); }
-        .btn-unblock:hover { background: rgba(34, 197, 94, 0.35); color: #ffffff; }
-        .btn-delete { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border-color: rgba(239, 68, 68, 0.4); }
-        .btn-delete:hover { background: rgba(239, 68, 68, 0.35); color: #ffffff; }
+        .btn-view { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+        .btn-view:hover { background: #bae6fd; color: #0284c7; }
+        .btn-edit { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+        .btn-edit:hover { background: #fde68a; color: #78350f; }
+        .btn-block { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+        .btn-block:hover { background: #fecaca; color: #7f1d1d; }
+        .btn-unblock { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+        .btn-unblock:hover { background: #bbf7d0; color: #166534; }
+        .btn-delete { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+        .btn-delete:hover { background: #fecaca; color: #7f1d1d; }
 
         .action-select {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            color: #ffffff;
-            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            background: #f8fafc;
+            color: #0f172a;
+            border: 1.5px solid #cbd5e1;
             border-radius: 8px;
             padding: 0.45rem 0.85rem;
             font-size: 0.84rem;
@@ -298,20 +286,19 @@ enforce_profile_completion($conn);
         }
 
         .action-select:hover {
-            border-color: #fbbf24;
-            box-shadow: 0 0 12px rgba(245, 158, 11, 0.35);
-            color: #fbbf24;
-            background: rgba(255, 255, 255, 0.25);
+            border-color: #f59e0b;
+            color: #b45309;
+            background: #ffffff;
         }
 
         .action-select:focus {
-            border-color: #fbbf24;
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
         }
 
         .action-select option {
-            background: #0f172a;
-            color: #ffffff;
+            background: #ffffff;
+            color: #0f172a;
             padding: 0.4rem;
         }
 

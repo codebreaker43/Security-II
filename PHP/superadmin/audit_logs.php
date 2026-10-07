@@ -165,13 +165,12 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
 
         /* ---- Filter Bar ---- */
         .filter-bar {
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(245, 158, 11, 0.35);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 16px;
             padding: 1.25rem 1.5rem;
             margin-bottom: 1rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 0 15px rgba(245, 158, 11, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }
 
         .filter-bar-title {
@@ -324,12 +323,11 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
         .table-container {
             width: 100%;
             margin-top: 1rem;
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(245, 158, 11, 0.35);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 16px;
             padding: 1.5rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 0 15px rgba(245, 158, 11, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             margin-bottom: 2rem;
             overflow-x: auto;
         }
