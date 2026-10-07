@@ -30,20 +30,21 @@ if (!$can_approve) {
     <style>
         body {
             background-image:
-                linear-gradient(rgba(240, 245, 255, 0.65), rgba(248, 250, 252, 0.80)),
+                linear-gradient(rgba(10, 15, 25, 0.20), rgba(10, 15, 25, 0.35)),
                 url('../../img/one_piece_bg.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
+            color: #ffffff;
         }
 
         h1 {
             font-size: 2.5rem;
-            font-weight: 700;
-            color: #0f172a;
+            font-weight: 800;
+            color: #ffffff;
             margin-bottom: 0.5rem;
             letter-spacing: -0.5px;
-            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
         }
 
         .page-header-row {
@@ -60,13 +61,14 @@ if (!$can_approve) {
             align-items: center;
             gap: 0.5rem;
             padding: 0.5rem 1rem;
-            background: #fef3c7;
+            background: rgba(245, 158, 11, 0.2);
             border: 1px solid rgba(245, 158, 11, 0.45);
             border-radius: 999px;
-            color: #b45309;
+            color: #fbbf24;
             font-size: 0.85rem;
             font-weight: 700;
             box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
         }
 
         .filter-toolbar {
@@ -76,12 +78,13 @@ if (!$can_approve) {
             align-items: center;
             justify-content: space-between;
             margin-bottom: 1.5rem;
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(245, 158, 11, 0.32);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.08) 100%);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.35);
             border-radius: 14px;
             padding: 1rem 1.25rem;
-            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
         }
 
         .search-input-wrapper {
@@ -97,7 +100,7 @@ if (!$can_approve) {
             left: 1rem;
             width: 18px;
             height: 18px;
-            stroke: #64748b;
+            stroke: #cbd5e1;
             pointer-events: none;
         }
 
@@ -105,27 +108,37 @@ if (!$can_approve) {
             width: 100%;
             padding: 0.8rem 1rem 0.8rem 2.8rem;
             border-radius: 10px;
-            border: 1px solid #cbd5e1;
-            background: #ffffff;
-            color: #0f172a;
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
+            background: rgba(8, 12, 22, 0.75);
+            backdrop-filter: blur(12px);
+            color: #ffffff !important;
             font-size: 0.92rem;
+            font-weight: 600;
             outline: none;
             transition: all 0.3s ease;
         }
 
+        .search-input-wrapper input::placeholder {
+            color: #94a3b8 !important;
+            font-weight: 500;
+        }
+
         .search-input-wrapper input:focus {
-            border-color: #f59e0b;
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+            border-color: #fbbf24 !important;
+            background: rgba(15, 23, 42, 0.95) !important;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35) !important;
         }
 
         /* Table Styles */
         .table-card {
-            background: rgba(255, 255, 255, 0.94);
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(245, 158, 11, 0.32);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.08) 100%);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.35);
             border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            padding: 1.5rem;
+            overflow-x: auto;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
         }
 
         .styled-table {
@@ -135,21 +148,22 @@ if (!$can_approve) {
         }
 
         .styled-table th {
-            background: linear-gradient(135deg, rgba(254, 243, 199, 0.75), rgba(254, 215, 170, 0.6));
-            color: #78350f;
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
             font-size: 0.8rem;
             text-transform: uppercase;
-            letter-spacing: 0.75px;
+            letter-spacing: 0.9px;
             font-weight: 800;
-            padding: 1.1rem 1.25rem;
+            padding: 1rem 1.1rem;
             border-bottom: 2px solid rgba(245, 158, 11, 0.4);
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
         }
 
         .styled-table td {
-            padding: 1rem 1.25rem;
-            color: #1e293b;
+            padding: 0.95rem 1.1rem;
+            color: #ffffff;
             font-size: 0.92rem;
-            border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
             vertical-align: middle;
         }
 
@@ -162,7 +176,7 @@ if (!$can_approve) {
         }
 
         .styled-table tbody tr:hover {
-            background: rgba(254, 243, 199, 0.35);
+            background: rgba(255, 255, 255, 0.08);
         }
 
         /* Badges */
@@ -406,7 +420,22 @@ if (!$can_approve) {
         .empty-state-box {
             text-align: center;
             padding: 4rem 1.5rem;
-            color: #64748b;
+            color: #cbd5e1;
+        }
+
+        .empty-state-box h3 {
+            color: #ffffff !important;
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+        }
+
+        .empty-state-box p {
+            color: #cbd5e1 !important;
+            font-size: 0.95rem;
+            margin: 0 0 1.25rem 0;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
         }
 
         .empty-state-icon {
@@ -441,7 +470,7 @@ if (!$can_approve) {
                 <div class="page-header-row">
                     <div>
                         <h1>Pending User Approvals</h1>
-                        <p style="color: #64748b; margin: 0; font-size: 0.95rem;">Review and approve newly registered customer accounts.</p>
+                        <p style="color: #cbd5e1; margin: 0; font-size: 0.95rem; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);">Review and approve newly registered customer accounts.</p>
                     </div>
                     <div>
                         <span class="pending-count-chip" id="pendingChip">

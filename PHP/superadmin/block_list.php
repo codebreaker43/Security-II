@@ -21,11 +21,28 @@ enforce_profile_completion($conn);
     <style>
         body {
             background-image:
-                linear-gradient(rgba(240, 245, 255, 0.65), rgba(248, 250, 252, 0.80)),
+                linear-gradient(rgba(10, 15, 25, 0.20), rgba(10, 15, 25, 0.35)),
                 url('../../img/one_piece_bg.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
+            color: #ffffff;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .main-content > p {
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            margin-bottom: 1.25rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
         }
 
         .search-container {
@@ -34,31 +51,39 @@ enforce_profile_completion($conn);
 
         .search-container input {
             width: 100%;
-            padding: 1rem 1.5rem;
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
+            padding: 0.85rem 1.25rem;
             border-radius: 12px;
-            color: #0f172a;
-            font-size: 1rem;
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
+            background: rgba(8, 12, 22, 0.75);
             backdrop-filter: blur(12px);
+            color: #ffffff !important;
+            font-size: 0.95rem;
+            font-weight: 600;
+            outline: none;
             transition: all 0.3s ease;
         }
 
+        .search-container input::placeholder {
+            color: #94a3b8 !important;
+            font-weight: 500;
+        }
+
         .search-container input:focus {
-            border-color: #f59e0b;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+            border-color: #fbbf24 !important;
+            background: rgba(15, 23, 42, 0.95) !important;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35) !important;
         }
 
         .table-container {
             width: 100%;
             margin-top: 1rem;
-            background: rgba(255, 255, 255, 0.94);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(245, 158, 11, 0.32);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.08) 100%);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.35);
             border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
         }
 
         .table-wrapper {
@@ -71,22 +96,23 @@ enforce_profile_completion($conn);
         }
 
         th {
-            background: linear-gradient(135deg, rgba(254, 243, 199, 0.75), rgba(254, 215, 170, 0.6));
-            color: #78350f;
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.9px;
             font-size: 0.8rem;
-            padding: 1.1rem 1.25rem;
+            padding: 1rem 1.1rem;
             text-align: left;
             border-bottom: 2px solid rgba(245, 158, 11, 0.4);
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
         }
 
         td {
-            padding: 0.95rem 1.25rem;
-            color: #1e293b;
+            padding: 0.95rem 1.1rem;
+            color: #ffffff;
             text-align: left;
-            border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
             font-size: 0.9rem;
             white-space: nowrap;
             overflow: hidden;
@@ -94,11 +120,11 @@ enforce_profile_completion($conn);
         }
 
         tr:nth-child(even) {
-            background: rgba(248, 250, 252, 0.6);
+            background: rgba(255, 255, 255, 0.03);
         }
 
         tr:hover {
-            background: rgba(254, 243, 199, 0.35);
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .action-buttons {
