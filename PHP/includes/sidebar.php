@@ -25,8 +25,16 @@ function render_sidebar($active_page = '') {
     if (!empty($user_id) && isset($GLOBALS['conn'])) {
         global $conn;
         require_once __DIR__ . '/auth_guard.php';
-        $is_profile_completed = check_user_personal_info_complete($conn, $user_id);
-        $_SESSION['profile_completed'] = $is_profile_completed ? 1 : 0;
+
+        $u_clean = mysqli_real_escape_string($conn, $user_id);
+        $p_chk = mysqli_query($conn, "SELECT profile_completed FROM user WHERE idno = '$u_clean' LIMIT 1");
+        if ($p_chk && ($p_r = mysqli_fetch_assoc($p_chk)) && intval($p_r['profile_completed']) === 1) {
+            $is_profile_completed = true;
+            $_SESSION['profile_completed'] = 1;
+        } else {
+            $is_profile_completed = check_user_personal_info_complete($conn, $user_id);
+            $_SESSION['profile_completed'] = $is_profile_completed ? 1 : 0;
+        }
 
         if (!$is_profile_completed && $active_page !== 'profile') {
             if (!headers_sent()) {
@@ -52,10 +60,19 @@ function render_sidebar($active_page = '') {
         if ($priv_q && mysqli_num_rows($priv_q) > 0) {
             $p_data = mysqli_fetch_assoc($priv_q);
             $privs = json_decode($p_data['privileges'] ?? '[]', true) ?? [];
+            if (empty($privs)) {
+                $privs = ['view_users', 'create_users', 'approve_users'];
+            }
             $can_view_users = in_array('view_users', $privs);
             $can_view_user_logs = in_array('view_user_logs', $privs) || in_array('view_audit_logs', $privs);
             $can_view_admin_logs = in_array('view_admin_logs', $privs) || in_array('view_audit_logs', $privs);
             $can_approve = in_array('approve_users', $privs);
+        } else {
+            $privs = ['view_users', 'create_users', 'approve_users'];
+            $can_view_users = true;
+            $can_view_user_logs = false;
+            $can_view_admin_logs = false;
+            $can_approve = true;
         }
     }
 
@@ -64,7 +81,7 @@ function render_sidebar($active_page = '') {
     if ($role === 'superadmin' && isset($GLOBALS['conn']) && !empty($user_id)) {
         global $conn;
         $sa_clean = mysqli_real_escape_string($conn, $user_id);
-        @mysqli_query($conn, "UPDATE user SET is_online = 1, last_activity = NOW() WHERE idno = '$sa_clean'");
+        @mysqli_query($conn, "UPDATE user SET is_online = 1, last_activity = NOW() WHERE idno = '$sa_clean' AND status = 'active'");
     }
 
     // Role theme configuration

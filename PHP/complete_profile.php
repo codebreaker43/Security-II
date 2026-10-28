@@ -13,9 +13,12 @@ $user_id = trim((string)$_SESSION['user_id']);
 $role = $_SESSION['role'];
 $username = $_SESSION['username'] ?? 'User';
 
-// If profile is already completely filled out, redirect directly to dashboard
+// If profile is already completely filled out or account is marked completed, redirect directly to dashboard
+$chk_p = mysqli_query($conn, "SELECT profile_completed FROM user WHERE idno = '" . mysqli_real_escape_string($conn, $user_id) . "' LIMIT 1");
+$is_already_marked = ($chk_p && ($row_p = mysqli_fetch_assoc($chk_p)) && intval($row_p['profile_completed']) === 1);
 $is_truly_complete = check_user_personal_info_complete($conn, $user_id);
-if ($is_truly_complete) {
+
+if ($is_already_marked || $is_truly_complete) {
     $_SESSION['profile_completed'] = 1;
     @mysqli_query($conn, "UPDATE user SET profile_completed = 1 WHERE idno = '" . mysqli_real_escape_string($conn, $user_id) . "'");
     if ($role === 'superadmin') {
@@ -210,27 +213,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = "Email address is required.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors[] = "Please enter a valid email address.";
-    } else {
-        $email_domain = strtolower(substr(strrchr($email, "@"), 1));
-        $is_gmail = ($email_domain === 'gmail.com');
-        $is_university = (preg_match('/^[a-z0-9.-]+\.edu\.ph$/i', $email_domain) || preg_match('/^[a-z0-9.-]+\.edu$/i', $email_domain));
-        if (!$is_gmail && !$is_university) {
-            $errors[] = "Only Gmail (@gmail.com) and university email (@...edu.ph / @...edu) are allowed.";
-        } elseif ($is_gmail && !empty($firstname) && !empty($lastname)) {
-            $local = strtolower(substr($email, 0, strpos($email, "@")));
-            $clean_fn = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $firstname));
-            $clean_ln = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $lastname));
-            $dot_fn = strtolower(preg_replace('/\s+/', '.', trim(preg_replace('/[^a-zA-Z0-9\s]/', '', $firstname))));
-            $dot_ln = strtolower(preg_replace('/\s+/', '.', trim(preg_replace('/[^a-zA-Z0-9\s]/', '', $lastname))));
-
-            $p1 = '/^' . preg_quote($clean_fn, '/') . '\.' . preg_quote($clean_ln, '/') . '[0-9]*$/';
-            $p2 = '/^' . preg_quote($dot_fn, '/') . '\.' . preg_quote($dot_ln, '/') . '[0-9]*$/';
-
-            if (!preg_match($p1, $local) && !preg_match($p2, $local)) {
-                $example = $clean_fn . '.' . $clean_ln . '@gmail.com';
-                $errors[] = "Gmail address must follow the standard: firstname.lastname@gmail.com (e.g., $example).";
-            }
-        }
     }
 
     // 5. Security Questions & Answers
@@ -1234,7 +1216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 Email Address <span class="req-star">*</span>
                             </label>
                             <input type="email" name="email" id="email" class="input-control"
-                                placeholder="firstname.lastname@gmail.com or name@csucc.edu.ph"
+                                placeholder="Enter your email address"
                                 value="<?php echo htmlspecialchars($email); ?>">
                             <small class="error-msg" id="email_error"></small>
                         </div>
@@ -1377,11 +1359,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         function isValidEmail(email) {
             var emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-            if (!emailRegex.test(email)) return false;
-            var domain = (email.trim().toLowerCase().split('@')[1] || '');
-            var isGmail = (domain === 'gmail.com');
-            var isUniversity = /(^|\.)[a-z0-9-]+\.edu\.ph$/.test(domain) || /(^|\.)[a-z0-9-]+\.edu$/.test(domain);
-            return isGmail || isUniversity;
+            return emailRegex.test(email);
         }
 
         function calculateAge() {
@@ -1937,43 +1915,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!val.includes('@')) {
                 setFieldError("email", "Email must contain an '@' symbol.");
                 return false;
-            }
-
-            var parts = val.toLowerCase().split('@');
-            if (parts.length === 2 && parts[1]) {
-                var domain = parts[1];
-                var isGmail = (domain === 'gmail.com');
-                var isUniversity = /(^|\.)[a-z0-9-]+\.edu\.ph$/.test(domain) || /(^|\.)[a-z0-9-]+\.edu$/.test(domain);
-
-                if (!isGmail && !isUniversity) {
-                    setFieldError("email", "Only Gmail (@gmail.com) and university email (@...edu.ph / @...edu) are allowed.");
-                    return false;
-                }
-
-                if (isGmail) {
-                    var fnEl = document.getElementById("firstname");
-                    var lnEl = document.getElementById("lastname");
-                    var fnVal = fnEl ? fnEl.value.trim() : "";
-                    var lnVal = lnEl ? lnEl.value.trim() : "";
-
-                    if (fnVal && lnVal) {
-                        var local = parts[0];
-                        var cleanFn = fnVal.toLowerCase().replace(/[^a-z0-9]/g, '');
-                        var cleanLn = lnVal.toLowerCase().replace(/[^a-z0-9]/g, '');
-                        var dotFn = fnVal.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '.');
-                        var dotLn = lnVal.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '.');
-
-                        var escapeRegex = function(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); };
-                        var r1 = new RegExp('^' + escapeRegex(cleanFn) + '\\.' + escapeRegex(cleanLn) + '[0-9]*$');
-                        var r2 = new RegExp('^' + escapeRegex(dotFn) + '\\.' + escapeRegex(dotLn) + '[0-9]*$');
-
-                        if (!r1.test(local) && !r2.test(local)) {
-                            var example = cleanFn + '.' + cleanLn + '@gmail.com';
-                            setFieldError("email", "Gmail address must follow the standard: firstname.lastname@gmail.com (e.g., " + example + ").");
-                            return false;
-                        }
-                    }
-                }
             }
 
             if (!isValidEmail(val)) {

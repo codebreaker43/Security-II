@@ -12,6 +12,9 @@ $priv_query = mysqli_query($conn, "SELECT privileges FROM user WHERE idno = '$cu
 $priv_data = mysqli_fetch_assoc($priv_query);
 $privileges_json = $priv_data['privileges'] ?? '[]';
 $privileges = json_decode($privileges_json, true) ?? [];
+if (empty($privileges)) {
+    $privileges = ['view_users', 'create_users', 'approve_users'];
+}
 $can_approve = in_array('approve_users', $privileges);
 
 if (!$can_approve) {

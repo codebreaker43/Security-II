@@ -46,33 +46,219 @@ enforce_profile_completion($conn);
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85);
         }
 
-        .search-container {
-            margin-bottom: 1rem;
-        }
-
-        .search-container input {
-            width: 100%;
-            padding: 0.85rem 1.25rem;
-            border-radius: 12px;
-            border: 1.5px solid #cbd5e1;
+        /* Filter Bar Card */
+        .filter-card {
             background: #ffffff;
-            color: #0f172a !important;
-            font-size: 0.95rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .filter-bar-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #d97706;
+            margin-bottom: 0.85rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-bar-title svg {
+            width: 14px;
+            height: 14px;
+            opacity: 0.9;
+        }
+
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: flex-end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .filter-group.search-group {
+            flex: 2;
+            min-width: 220px;
+        }
+
+        .filter-group label {
+            font-size: 0.80rem;
+            color: #0f172a;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group select,
+        .filter-group input[type="text"] {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            background: #ffffff;
+            border: 1.5px solid #94a3b8;
+            border-radius: 8px;
+            color: #0f172a;
+            font-size: 0.88rem;
             font-weight: 600;
+            font-family: inherit;
+            transition: all 0.25s ease;
             outline: none;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
-        .search-container input::placeholder {
-            color: #64748b !important;
-            font-weight: 500;
+        .filter-group select:hover,
+        .filter-group input[type="text"]:hover {
+            border-color: #f59e0b;
         }
 
-        .search-container input:focus {
-            border-color: #f59e0b !important;
-            background: #ffffff !important;
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2) !important;
+        .filter-group select:focus,
+        .filter-group input[type="text"]:focus {
+            border-color: #d97706;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+            background: #ffffff;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-end;
+            padding-bottom: 1px;
+        }
+
+        .btn-filter {
+            padding: 0.6rem 1.3rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            white-space: nowrap;
+        }
+
+        .btn-filter-clear {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+        }
+
+        .btn-filter-clear:hover {
+            background: #fee2e2;
+            color: #dc2626;
+            border-color: #fca5a5;
+        }
+
+        .results-count {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 0.75rem;
+            padding-top: 0.65rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .results-count strong {
+            color: #0f172a;
+        }
+
+        .role-superadmin {
+            color: #b91c1c;
+            font-weight: 800;
+        }
+
+        .role-admin {
+            color: #0284c7;
+            font-weight: 700;
+        }
+
+        .role-user {
+            color: #475569;
+            font-weight: 600;
+        }
+
+        /* Pagination Styling */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 1.5rem;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .pagination .btn-pag,
+        .pagination span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2.4rem;
+            height: 2.4rem;
+            padding: 0 0.75rem;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            color: #0f172a;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .pagination .btn-pag:hover:not(:disabled):not(.active) {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #92400e;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+        }
+
+        .pagination .btn-pag.active {
+            background: linear-gradient(135deg, #d97706, #b45309) !important;
+            border-color: #d97706 !important;
+            color: #fff !important;
+            box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35);
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .pagination span.dots {
+            border-color: transparent;
+            background: transparent;
+            color: #94a3b8;
+            cursor: default;
+        }
+
+        .pagination .btn-pag.disabled,
+        .pagination .btn-pag:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .pagination-info {
+            text-align: center;
+            font-size: 0.82rem;
+            color: #ffffff;
+            font-weight: 600;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+            margin-top: 0.75rem;
         }
 
         /* Solid White Table Card */
@@ -82,29 +268,37 @@ enforce_profile_completion($conn);
             background: #ffffff;
             border: 1px solid #e2e8f0;
             border-radius: 16px;
-            overflow: hidden;
+            padding: 1.5rem;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+            overflow-x: auto;
         }
 
         .table-wrapper {
-            overflow-x: auto;
+            background: transparent;
+            border-radius: 10px;
+            position: relative;
+            min-width: 800px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
+            color: #0f172a;
+            table-layout: auto;
         }
 
         th {
-            background: #f8fafc;
-            color: #334155;
+            background: rgba(254, 243, 199, 0.75) !important;
             font-weight: 800;
+            color: #78350f !important;
             text-transform: uppercase;
-            letter-spacing: 0.9px;
-            font-size: 0.8rem;
-            padding: 1rem 1.1rem;
+            letter-spacing: 0.75px;
+            border-top: 3px solid #f59e0b !important;
+            border-bottom: 2px solid #fde68a !important;
+            padding: 1.1rem 1rem;
             text-align: left;
-            border-bottom: 2px solid #e2e8f0;
+            font-size: 0.88rem;
             text-shadow: none;
         }
 
@@ -399,12 +593,47 @@ enforce_profile_completion($conn);
         <h1>Block List</h1>
         <p>View all blocked accounts and manage their status.</p>
 
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Search by name, username, or email..."
-                onkeyup="filterTable()">
+        <!-- Filters Bar -->
+        <div class="filter-card">
+            <div class="filter-bar-title">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" />
+                </svg>
+                Filters
+            </div>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="filterRole">Role</label>
+                    <select id="filterRole" onchange="renderBlockedTable()">
+                        <option value="all">All Roles</option>
+                        <option value="admin">Admin</option>
+                        <option value="user">User</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filterIdno">ID Number</label>
+                    <input type="text" id="filterIdno" placeholder="Search ID..." onkeyup="renderBlockedTable()">
+                </div>
+                <div class="filter-group">
+                    <label for="filterUsername">Username</label>
+                    <input type="text" id="filterUsername" placeholder="Search username..." onkeyup="renderBlockedTable()">
+                </div>
+                <div class="filter-group search-group">
+                    <label for="searchInput">Name or Email</label>
+                    <input type="text" id="searchInput" placeholder="Search name or email..." onkeyup="renderBlockedTable()">
+                </div>
+                <div class="filter-actions">
+                    <button type="button" class="btn-filter btn-filter-clear" onclick="clearFilters()">
+                        ✕ Clear
+                    </button>
+                </div>
+            </div>
+            <div class="results-count" id="resultsCount">
+                Showing <strong>0</strong> blocked accounts
+            </div>
         </div>
 
-        <h2 class="section-title admin">Blocked Admins</h2>
+        <!-- Single Unified Table -->
         <div class="table-container">
             <div class="table-wrapper">
                 <table id="blockListTable">
@@ -413,6 +642,7 @@ enforce_profile_completion($conn);
                             <th>ID No</th>
                             <th>Name</th>
                             <th>Username</th>
+                            <th>Role</th>
                             <th>Email</th>
                             <th>Status</th>
                             <th>Actions</th>
@@ -420,36 +650,16 @@ enforce_profile_completion($conn);
                     </thead>
                     <tbody id="blockListTableBody">
                         <tr>
-                            <td colspan="6" style="text-align: center;">Loading blocked admins...</td>
+                            <td colspan="7" style="text-align: center;">Loading blocked accounts...</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <h2 class="section-title user">Blocked Users</h2>
-        <div class="table-container">
-            <div class="table-wrapper">
-                <table id="blockListUsersTable">
-                    <thead>
-                        <tr>
-                            <th>ID No</th>
-                            <th>Name</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="blockListUsersTableBody">
-                        <tr>
-                            <td colspan="6" style="text-align: center;">Loading blocked users...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+        <!-- Block List Pagination -->
+        <div id="blockPagination" class="pagination"></div>
+        <div id="blockPaginationInfo" class="pagination-info"></div>
 
     <!-- View User Modal -->
     <div id="viewUserModal" class="modal">
@@ -467,6 +677,10 @@ enforce_profile_completion($conn);
     </div>
 
     <script>
+        let allBlockedUsers = [];
+        let currentBlockPage = 1;
+        const blockPerPage = 10;
+
         document.addEventListener('DOMContentLoaded', loadBlockedUsers);
 
         function loadBlockedUsers() {
@@ -474,10 +688,8 @@ enforce_profile_completion($conn);
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        const blockedAdmins = data.users.filter(user => (user.role === 'admin' || user.role === 'superadmin') && user.status === 'blocked');
-                        const blockedUsers = data.users.filter(user => user.role === 'user' && user.status === 'blocked');
-                        renderTable(blockedAdmins, 'blockListTableBody', 'No blocked admins found. All administrators are active.');
-                        renderTable(blockedUsers, 'blockListUsersTableBody', 'No blocked users found. All users are active.');
+                        allBlockedUsers = (data.users || []).filter(user => user.status === 'blocked');
+                        renderBlockedTable(true);
                     } else {
                         showToast(data.error || 'Failed to load users', 'error');
                     }
@@ -488,51 +700,172 @@ enforce_profile_completion($conn);
                 });
         }
 
-        function renderTable(users, tbodyId, emptyMessage) {
-            const tbody = document.getElementById(tbodyId);
+        function renderBlockedTable(resetPage = false) {
+            if (resetPage) currentBlockPage = 1;
 
-            if (users.length === 0) {
+            const roleFilter = document.getElementById('filterRole') ? document.getElementById('filterRole').value : 'all';
+            const idnoFilter = (document.getElementById('filterIdno') ? document.getElementById('filterIdno').value : '').toLowerCase().trim();
+            const usernameFilter = (document.getElementById('filterUsername') ? document.getElementById('filterUsername').value : '').toLowerCase().trim();
+            const searchFilter = (document.getElementById('searchInput') ? document.getElementById('searchInput').value : '').toLowerCase().trim();
+
+            const isFiltered = (roleFilter !== 'all' || idnoFilter !== '' || usernameFilter !== '' || searchFilter !== '');
+
+            const filtered = allBlockedUsers.filter(user => {
+                // Role filter
+                if (roleFilter !== 'all') {
+                    if (roleFilter === 'admin' && user.role !== 'admin' && user.role !== 'superadmin') return false;
+                    if (roleFilter === 'user' && user.role !== 'user') return false;
+                }
+
+                // ID Number filter
+                if (idnoFilter !== '') {
+                    if (!user.idno || !user.idno.toLowerCase().includes(idnoFilter)) return false;
+                }
+
+                // Username filter
+                if (usernameFilter !== '') {
+                    if (!user.username || !user.username.toLowerCase().includes(usernameFilter)) return false;
+                }
+
+                // Name or Email filter
+                if (searchFilter !== '') {
+                    const fullName = ((user.firstname || '') + ' ' + (user.lastname || '')).toLowerCase();
+                    const email = (user.email || '').toLowerCase();
+                    if (!fullName.includes(searchFilter) && !email.includes(searchFilter)) return false;
+                }
+
+                return true;
+            });
+
+            const totalPages = Math.ceil(filtered.length / blockPerPage) || 1;
+            if (currentBlockPage > totalPages) currentBlockPage = totalPages;
+            if (currentBlockPage < 1) currentBlockPage = 1;
+
+            const startIndex = (currentBlockPage - 1) * blockPerPage;
+            const endIndex = Math.min(startIndex + blockPerPage, filtered.length);
+            const pagedUsers = filtered.slice(startIndex, endIndex);
+
+            // Update result counter
+            const counter = document.getElementById('resultsCount');
+            if (counter) {
+                if (filtered.length > 0) {
+                    counter.innerHTML = `Showing <strong>${startIndex + 1}&ndash;${endIndex}</strong> of <strong>${filtered.length}</strong> blocked accounts${isFiltered ? ' (filtered)' : ''}`;
+                } else {
+                    counter.innerHTML = `Showing <strong>0</strong> blocked accounts`;
+                }
+            }
+
+            const tbody = document.getElementById('blockListTableBody');
+            if (!tbody) return;
+
+            if (filtered.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6">
+                        <td colspan="7">
                             <div class="empty-state">
                                 <div class="icon">✅</div>
-                                <p>${emptyMessage}</p>
+                                <p>${allBlockedUsers.length === 0 ? 'No blocked accounts found. All accounts are active.' : 'No blocked accounts match the selected filters.'}</p>
                             </div>
                         </td>
                     </tr>`;
+                renderBlockPagination(0, 0);
                 return;
             }
 
-            tbody.innerHTML = users.map(user => `
-                <tr data-search="${(user.firstname + ' ' + user.lastname + ' ' + user.username + ' ' + user.email).toLowerCase()}">
-                    <td>${user.idno}</td>
-                    <td>${user.firstname} ${user.lastname}</td>
-                    <td>${user.username}</td>
-                    <td>${user.email}</td>
-                    <td class="status-blocked">Blocked</td>
+            tbody.innerHTML = pagedUsers.map(user => {
+                const isRoleAdmin = (user.role === 'admin' || user.role === 'superadmin');
+                const roleClass = isRoleAdmin ? 'role-admin' : 'role-user';
+                const roleDisplay = user.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'User';
+
+                return `
+                <tr>
+                    <td style="font-family: monospace; font-weight: 700; color: #0284c7; letter-spacing: 0.5px;">${escapeHtml(user.idno)}</td>
+                    <td style="font-weight: 600; color: #0f172a;">${escapeHtml(user.firstname)} ${escapeHtml(user.lastname)}</td>
+                    <td style="color: #b45309; font-weight: 700;">${escapeHtml(user.username)}</td>
+                    <td>
+                        <span class="${roleClass}" style="font-weight: 700;">
+                            ${escapeHtml(roleDisplay)}
+                        </span>
+                    </td>
+                    <td>${escapeHtml(user.email)}</td>
+                    <td><span class="status-blocked">Blocked</span></td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn-action btn-view" onclick="viewUser('${user.idno}')">View</button>
-                            <button class="btn-action btn-unblock" onclick="unblockUser('${user.idno}')">Unblock</button>
+                            <button class="btn-action btn-view" onclick="viewUser('${escapeHtml(user.idno)}')">View</button>
+                            <button class="btn-action btn-unblock" onclick="unblockUser('${escapeHtml(user.idno)}')">Unblock</button>
                         </div>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
+
+            renderBlockPagination(totalPages, filtered.length);
         }
 
-        function filterTable() {
-            const searchText = document.getElementById('searchInput').value.toLowerCase();
-            const adminRows = document.querySelectorAll('#blockListTableBody tr');
-            const userRows = document.querySelectorAll('#blockListUsersTableBody tr');
+        function renderBlockPagination(totalPages, totalItems) {
+            const pagContainer = document.getElementById('blockPagination');
+            const infoContainer = document.getElementById('blockPaginationInfo');
+            if (!pagContainer || !infoContainer) return;
 
-            const filterRow = row => {
-                const searchData = row.getAttribute('data-search') || '';
-                row.style.display = searchData.includes(searchText) ? '' : 'none';
-            };
+            if (totalPages <= 1) {
+                pagContainer.innerHTML = '';
+                infoContainer.innerHTML = totalItems > 0 ? `Page 1 of 1 (${totalItems} total)` : '';
+                return;
+            }
 
-            adminRows.forEach(filterRow);
-            userRows.forEach(filterRow);
+            let html = '';
+            // Prev button
+            if (currentBlockPage > 1) {
+                html += `<button type="button" class="btn-pag" onclick="changeBlockPage(${currentBlockPage - 1})">&laquo; Prev</button>`;
+            } else {
+                html += `<button type="button" class="btn-pag disabled" disabled>&laquo; Prev</button>`;
+            }
+
+            // Page numbers
+            const windowSize = 2;
+            let pages = [];
+            for (let p = 1; p <= totalPages; p++) {
+                if (p === 1 || p === totalPages || (p >= currentBlockPage - windowSize && p <= currentBlockPage + windowSize)) {
+                    pages.push(p);
+                }
+            }
+
+            let lastP = null;
+            pages.forEach(p => {
+                if (lastP !== null && p - lastP > 1) {
+                    html += `<span class="dots">&hellip;</span>`;
+                }
+                if (p === currentBlockPage) {
+                    html += `<button type="button" class="btn-pag active">${p}</button>`;
+                } else {
+                    html += `<button type="button" class="btn-pag" onclick="changeBlockPage(${p})">${p}</button>`;
+                }
+                lastP = p;
+            });
+
+            // Next button
+            if (currentBlockPage < totalPages) {
+                html += `<button type="button" class="btn-pag" onclick="changeBlockPage(${currentBlockPage + 1})">Next &raquo;</button>`;
+            } else {
+                html += `<button type="button" class="btn-pag disabled" disabled>Next &raquo;</button>`;
+            }
+
+            pagContainer.innerHTML = html;
+            infoContainer.innerHTML = `Page ${currentBlockPage} of ${totalPages} (${totalItems} total)`;
+        }
+
+        function changeBlockPage(page) {
+            currentBlockPage = page;
+            renderBlockedTable(false);
+            const table = document.querySelector('.table-container');
+            if (table) table.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function clearFilters() {
+            if (document.getElementById('filterRole')) document.getElementById('filterRole').value = 'all';
+            if (document.getElementById('filterIdno')) document.getElementById('filterIdno').value = '';
+            if (document.getElementById('filterUsername')) document.getElementById('filterUsername').value = '';
+            if (document.getElementById('searchInput')) document.getElementById('searchInput').value = '';
+            renderBlockedTable(true);
         }
 
         function unblockUser(userId) {

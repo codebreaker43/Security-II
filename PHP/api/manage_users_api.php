@@ -1,11 +1,17 @@
 <?php
+ob_start();
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+
 session_start();
 require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../includes/mail_config.php';
 
 header('Content-Type: application/json');
 
 // Check if user is logged in and has proper role
 if (!isset($_SESSION['role']) || !isset($_SESSION['user_id'])) {
+    if (ob_get_length()) ob_clean();
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized']);
     exit();
@@ -33,9 +39,11 @@ if ($current_role === 'admin') {
         $priv_data = mysqli_fetch_assoc($priv_query);
         $privileges_json = $priv_data['privileges'] ?? '[]';
         $admin_privileges = $privileges_json ? json_decode($privileges_json, true) : [];
-        if (!is_array($admin_privileges)) {
-            $admin_privileges = [];
+        if (!is_array($admin_privileges) || empty($admin_privileges)) {
+            $admin_privileges = ['view_users', 'create_users', 'approve_users'];
         }
+    } else {
+        $admin_privileges = ['view_users', 'create_users', 'approve_users'];
     }
 }
 
@@ -174,7 +182,7 @@ switch ($method) {
         // Clean up stale superadmin sessions (> 15 mins inactive)
         @mysqli_query($conn, "UPDATE user SET is_online = 0 WHERE role = 'superadmin' AND is_online = 1 AND last_activity IS NOT NULL AND last_activity < NOW() - INTERVAL 15 MINUTE");
 
-        $select_fields = "idno, firstname, middlename, lastname, suffix, username, email, role, status, block_reason, block_file, delete_reason, delete_file, is_online, last_activity, privileges, birthdate, age, sex, country, purokstreet, brgy, municipal, province, zipcode, must_change_password, security_question1, security_question2, security_question3";
+        $select_fields = "idno, firstname, middlename, lastname, suffix, username, email, role, status, block_reason, block_file, delete_reason, delete_file, delete_requested_by, delete_requested_at, is_online, last_activity, privileges, birthdate, age, sex, country, purokstreet, brgy, municipal, province, zipcode, must_change_password, security_question1, security_question2, security_question3";
 
         if ($current_role === 'superadmin') {
             // Super Admin can view all users, admins, and other superadmins
@@ -372,20 +380,29 @@ switch ($method) {
                 echo json_encode(['error' => 'Password must be at least 8 characters long.']);
                 exit();
             }
-            if (!preg_match('/[A-Z]/', $chosen_password) || !preg_match('/[0-9]/', $chosen_password) || !preg_match('/[!@#$%^&*()_+\-=\[\]{};\':"\\\\|,.<>\/?]/', $chosen_password)) {
+            if (strlen($chosen_password) > 25) {
                 http_response_code(400);
-                echo json_encode(['error' => 'Password must include uppercase letter, number, and special symbol.']);
+                echo json_encode(['error' => 'Password should not exceed 25 characters.']);
                 exit();
+            }
+            if (!preg_match('/[A-Z]/', $chosen_password) || !preg_match('/[a-z]/', $chosen_password) || !preg_match('/[0-9]/', $chosen_password) || !preg_match('/[!@#$%^&*()_+\-=\[\]{};\':"\\\\|,.<>\/?]/', $chosen_password)) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Password is too weak. Must include uppercase, lowercase, number, and special symbol.']);
+                exit();
+            }
+            // Check for 3 consecutive repeated characters
+            for ($i = 0; $i < strlen($chosen_password) - 2; $i++) {
+                if ($chosen_password[$i] === $chosen_password[$i+1] && $chosen_password[$i] === $chosen_password[$i+2]) {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'Password is too weak. Cannot contain 3 consecutive repeated characters.']);
+                    exit();
+                }
             }
             $hashed_password = password_hash($chosen_password, PASSWORD_DEFAULT);
             $must_change_password = 1;
 
-            // Set initial status: Super Admin accounts should be inactive upon creation
-            if ($raw_role === 'superadmin') {
-                $initial_status = 'inactive';
-            } else {
-                $initial_status = 'active';
-            }
+            // Initial status: all newly created accounts are active
+            $initial_status = 'active';
 
             // Privileges: only for admin or superadmin
             $privileges_json = null;
@@ -393,8 +410,13 @@ switch ($method) {
                 // If superadmin, always grant full privileges
                 $all_privs = ['view_users', 'create_users', 'edit_users', 'delete_users', 'block_users', 'view_audit_logs', 'approve_users'];
                 $privileges_json = json_encode($all_privs);
-            } elseif ($raw_role === 'admin' && isset($data['privileges']) && is_array($data['privileges'])) {
-                $privileges_json = json_encode($data['privileges']);
+            } elseif ($raw_role === 'admin') {
+                $default_admin_privs = ['view_users', 'create_users', 'approve_users'];
+                if (isset($data['privileges']) && is_array($data['privileges']) && !empty($data['privileges'])) {
+                    $privileges_json = json_encode(array_values(array_unique($data['privileges'])));
+                } else {
+                    $privileges_json = json_encode($default_admin_privs);
+                }
             }
 
             $fname = !empty($raw_firstname) ? $raw_firstname : ($raw_role === 'superadmin' ? 'Super' : ($raw_role === 'admin' ? 'System' : $raw_username));
@@ -409,10 +431,52 @@ switch ($method) {
                     $new_id = mysqli_insert_id($conn);
                     $desc = "Created new $raw_role: $raw_username ($raw_idno) with status: $initial_status";
                     logAction($conn, $current_user_id, $_SESSION['username'], $current_role, "Create Account", $desc);
-                    echo json_encode([
-                        'success' => true,
-                        'message' => "Account $raw_username created successfully."
-                    ]);
+
+                    // Rule: Only ONE Super Admin can be ACTIVE at any time!
+                    $is_self_deactivated = false;
+                    if ($raw_role === 'superadmin') {
+                        $esc_new_idno = mysqli_real_escape_string($conn, $raw_idno);
+                        // Inactivate all other superadmin accounts and clear online status
+                        mysqli_query($conn, "UPDATE user SET status = 'inactive', is_online = 0 WHERE role = 'superadmin' AND idno != '$esc_new_idno'");
+                        @mysqli_query($conn, "UPDATE `admins` SET status = 'Inactive' WHERE user_idno != '$esc_new_idno'");
+
+                        // Synchronize new superadmin in `admins` table
+                        $full_name = trim("$fname $lname") ?: $raw_username;
+                        $e_name = mysqli_real_escape_string($conn, $full_name);
+                        $e_email = !empty($email) ? "'" . mysqli_real_escape_string($conn, $email) . "'" : "NULL";
+
+                        $chk_adm = mysqli_query($conn, "SELECT id FROM `admins` WHERE user_idno = '$esc_new_idno' LIMIT 1");
+                        if ($chk_adm && mysqli_num_rows($chk_adm) > 0) {
+                            @mysqli_query($conn, "UPDATE `admins` SET name = '$e_name', email = $e_email, status = 'Active' WHERE user_idno = '$esc_new_idno'");
+                        } else {
+                            @mysqli_query($conn, "INSERT INTO `admins` (user_idno, name, email, role, status) VALUES ('$esc_new_idno', '$e_name', $e_email, 'Super Admin', 'Active')");
+                        }
+
+                        // Send activation notification email if email was provided
+                        if (!empty($email)) {
+                            send_superadmin_activated_notification($email, $full_name);
+                        }
+
+                        // Current superadmin account is now inactive and logged out
+                        $is_self_deactivated = true;
+                        @mysqli_query($conn, "UPDATE user SET is_online = 0 WHERE idno = '" . mysqli_real_escape_string($conn, $current_user_id) . "'");
+                        session_unset();
+                        session_destroy();
+                    }
+
+                    if ($is_self_deactivated) {
+                        echo json_encode([
+                            'success' => true,
+                            'message' => "Super Admin account '$raw_username' has been created and set to ACTIVE. Since only one Super Admin can be active at a time, your current account has been set to INACTIVE and you have been logged out. The new Super Admin can now log in.",
+                            'self_deactivated' => true,
+                            'redirect' => '../login.php'
+                        ]);
+                    } else {
+                        echo json_encode([
+                            'success' => true,
+                            'message' => "Account $raw_username created successfully."
+                        ]);
+                    }
                 } else {
                     http_response_code(500);
                     echo json_encode(['error' => 'Failed to create account: ' . mysqli_error($conn)]);
@@ -433,15 +497,8 @@ switch ($method) {
             exit();
         }
 
-        // Prevent self-modification for block/delete/role change
-        if ($target_user_id === $current_user_id && in_array($action, ['block', 'delete', 'update_role'])) {
-            http_response_code(403);
-            echo json_encode(['error' => 'You cannot block, delete, or change role of your own active account.']);
-            exit();
-        }
-
         // Fetch target user info
-        $check_stmt = mysqli_prepare($conn, "SELECT idno, role, username, status FROM user WHERE idno = ? LIMIT 1");
+        $check_stmt = mysqli_prepare($conn, "SELECT * FROM user WHERE idno = ? LIMIT 1");
         mysqli_stmt_bind_param($check_stmt, "s", $target_user_id);
         mysqli_stmt_execute($check_stmt);
         $target_user = mysqli_fetch_assoc(mysqli_stmt_get_result($check_stmt));
@@ -450,6 +507,17 @@ switch ($method) {
         if (!$target_user) {
             http_response_code(404);
             echo json_encode(['error' => 'User not found.']);
+            exit();
+        }
+
+        // Prevent self-modification (cannot edit, block, delete, change role, or change privileges of own account)
+        $is_self = ($target_user_id === $current_user_id) 
+            || ($target_user['idno'] === $current_user_id) 
+            || (!empty($_SESSION['username']) && $target_user['username'] === $_SESSION['username']);
+
+        if ($is_self && in_array($action, ['block', 'delete', 'update_role', 'update_user_info', 'update_privileges'])) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Dili nimo pwede i-edit, i-block, i-delete, o usbon ang imong kaugalingon nga account dinhi. View ra ang gitugot.']);
             exit();
         }
 
@@ -475,9 +543,9 @@ switch ($method) {
                 echo json_encode(['error' => 'You do not have permission to edit users.']);
                 exit();
             }
-            if (in_array($action, ['update_role', 'update_privileges'])) {
+            if (in_array($action, ['update_role', 'update_privileges', 'approve_deletion', 'reject_deletion'])) {
                 http_response_code(403);
-                echo json_encode(['error' => 'Admins cannot change roles or privileges.']);
+                echo json_encode(['error' => 'Admins cannot perform this action. Only Super Admin can approve or reject deletion requests and manage roles.']);
                 exit();
             }
         }
@@ -530,7 +598,32 @@ switch ($method) {
 
                 $uploaded_file = handleUploadedReasonFile();
 
-                // Audit log before permanent deletion
+                // Admin-initiated deletion: forwards directly to Super Admin as a Deletion Request
+                if ($current_role === 'admin') {
+                    $admin_username = !empty($_SESSION['username']) ? $_SESSION['username'] : $current_user_id;
+                    $stmt_req = mysqli_prepare($conn, "UPDATE user SET status = 'pending_deletion', delete_reason = ?, delete_file = ?, delete_requested_by = ?, delete_requested_at = NOW() WHERE idno = ?");
+                    if ($stmt_req) {
+                        mysqli_stmt_bind_param($stmt_req, "ssss", $reason, $uploaded_file, $admin_username, $target_user_id);
+                        if (mysqli_stmt_execute($stmt_req)) {
+                            $log_details = "Admin ($admin_username) submitted deletion request for user: " . $target_user['username'] . " (" . $target_user_id . ") | Reason: " . $reason . ($uploaded_file ? " | File: " . $uploaded_file : "") . " | Forwarded directly to Super Admin for review.";
+                            logAction($conn, $current_user_id, $_SESSION['username'], $current_role, "Request Account Deletion", $log_details);
+                            echo json_encode([
+                                'success' => true,
+                                'message' => "Deletion request for user account '" . $target_user['username'] . "' has been submitted directly to the Super Admin for review and approval."
+                            ]);
+                        } else {
+                            http_response_code(500);
+                            echo json_encode(['error' => 'Failed to submit deletion request: ' . mysqli_error($conn)]);
+                        }
+                        mysqli_stmt_close($stmt_req);
+                    } else {
+                        http_response_code(500);
+                        echo json_encode(['error' => 'Database error: ' . mysqli_error($conn)]);
+                    }
+                    break;
+                }
+
+                // Superadmin direct deletion: permanent database removal
                 $log_details = "Permanently deleted user: " . $target_user['username'] . " (" . $target_user_id . ", Role: " . $target_user['role'] . ") | Reason: " . $reason . ($uploaded_file ? " | File: " . $uploaded_file : "");
                 logAction($conn, $current_user_id, $_SESSION['username'], $current_role, "Delete Account", $log_details);
 
@@ -554,6 +647,66 @@ switch ($method) {
                 }
                 break;
 
+            case 'approve_deletion':
+                if ($current_role !== 'superadmin') {
+                    http_response_code(403);
+                    echo json_encode(['error' => 'Only Super Admin can approve account deletion requests.']);
+                    exit();
+                }
+
+                $req_admin = $target_user['delete_requested_by'] ?? 'Admin';
+                $d_reason = $target_user['delete_reason'] ?? 'No reason provided';
+                $d_file = $target_user['delete_file'] ?? '';
+
+                $log_details = "Super Admin approved deletion request from Admin ($req_admin) for user: " . $target_user['username'] . " (" . $target_user_id . ") | Reason: " . $d_reason . ($d_file ? " | File: " . $d_file : "");
+                logAction($conn, $current_user_id, $_SESSION['username'], $current_role, "Approve Deletion Request", $log_details);
+
+                @mysqli_query($conn, "DELETE FROM otp_verifications WHERE user_id = '" . mysqli_real_escape_string($conn, $target_user_id) . "'");
+
+                $stmt_del = mysqli_prepare($conn, "DELETE FROM user WHERE idno = ?");
+                if ($stmt_del) {
+                    mysqli_stmt_bind_param($stmt_del, "s", $target_user_id);
+                    if (mysqli_stmt_execute($stmt_del)) {
+                        echo json_encode(['success' => true, 'message' => "Deletion request approved. Account '" . $target_user['username'] . "' has been permanently deleted from the database."]);
+                    } else {
+                        http_response_code(500);
+                        echo json_encode(['error' => 'Failed to delete account: ' . mysqli_error($conn)]);
+                    }
+                    mysqli_stmt_close($stmt_del);
+                } else {
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Database error: ' . mysqli_error($conn)]);
+                }
+                break;
+
+            case 'reject_deletion':
+                if ($current_role !== 'superadmin') {
+                    http_response_code(403);
+                    echo json_encode(['error' => 'Only Super Admin can reject account deletion requests.']);
+                    exit();
+                }
+
+                $reject_note = trim($data['reason'] ?? 'Deletion request was rejected by Super Admin.');
+                $req_admin = $target_user['delete_requested_by'] ?? 'Admin';
+
+                $stmt_rej = mysqli_prepare($conn, "UPDATE user SET status = 'active', delete_reason = NULL, delete_file = NULL, delete_requested_by = NULL, delete_requested_at = NULL WHERE idno = ?");
+                if ($stmt_rej) {
+                    mysqli_stmt_bind_param($stmt_rej, "s", $target_user_id);
+                    if (mysqli_stmt_execute($stmt_rej)) {
+                        $log_details = "Super Admin rejected deletion request from Admin ($req_admin) for user: " . $target_user['username'] . " (" . $target_user_id . ") | Note: " . $reject_note;
+                        logAction($conn, $current_user_id, $_SESSION['username'], $current_role, "Reject Deletion Request", $log_details);
+                        echo json_encode(['success' => true, 'message' => "Deletion request for '" . $target_user['username'] . "' was rejected. Account has been restored to Active status."]);
+                    } else {
+                        http_response_code(500);
+                        echo json_encode(['error' => 'Failed to reject deletion request: ' . mysqli_error($conn)]);
+                    }
+                    mysqli_stmt_close($stmt_rej);
+                } else {
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Database error: ' . mysqli_error($conn)]);
+                }
+                break;
+
             case 'unblock':
                 $stmt_unb = mysqli_prepare($conn, "UPDATE user SET status = 'active', block_reason = NULL, block_file = NULL WHERE idno = ?");
                 if ($stmt_unb) {
@@ -568,6 +721,14 @@ switch ($method) {
                     if ($target_user['role'] === 'superadmin') {
                         $esc_target = mysqli_real_escape_string($conn, $target_user_id);
                         mysqli_query($conn, "UPDATE user SET status = 'inactive', is_online = 0 WHERE role = 'superadmin' AND idno != '$esc_target'");
+                        @mysqli_query($conn, "UPDATE `admins` SET status = 'Active' WHERE user_idno = '$esc_target'");
+                        @mysqli_query($conn, "UPDATE `admins` SET status = 'Inactive' WHERE user_idno != '$esc_target'");
+
+                        // Dispatch activation notification email via Gmail SMTP
+                        if (!empty($target_user['email'])) {
+                            $t_name = trim(($target_user['firstname'] ?? '') . ' ' . ($target_user['lastname'] ?? '')) ?: $target_user['username'];
+                            send_superadmin_activated_notification($target_user['email'], $t_name);
+                        }
 
                         if ($target_user_id !== $current_user_id) {
                             $is_self_deactivated = true;
@@ -657,9 +818,36 @@ switch ($method) {
                     exit();
                 }
 
-                $stmt_r = mysqli_prepare($conn, "UPDATE user SET role = ? WHERE idno = ?");
+                $stmt_r = null;
+                if ($new_role === 'superadmin') {
+                    $all_privs = json_encode(['view_users', 'create_users', 'edit_users', 'delete_users', 'block_users', 'view_audit_logs', 'approve_users']);
+                    $stmt_r = mysqli_prepare($conn, "UPDATE user SET role = ?, privileges = ? WHERE idno = ?");
+                    if ($stmt_r) {
+                        mysqli_stmt_bind_param($stmt_r, "sss", $new_role, $all_privs, $target_user_id);
+                    }
+                } elseif ($new_role === 'admin') {
+                    $chk_p = mysqli_query($conn, "SELECT privileges FROM user WHERE idno = '" . mysqli_real_escape_string($conn, $target_user_id) . "' LIMIT 1");
+                    $cur_privs = ($chk_p && $p_r = mysqli_fetch_assoc($chk_p)) ? ($p_r['privileges'] ?? null) : null;
+                    if (empty($cur_privs) || $cur_privs === 'null' || $cur_privs === '[]') {
+                        $def_privs = json_encode(['view_users', 'create_users', 'approve_users']);
+                        $stmt_r = mysqli_prepare($conn, "UPDATE user SET role = ?, privileges = ? WHERE idno = ?");
+                        if ($stmt_r) {
+                            mysqli_stmt_bind_param($stmt_r, "sss", $new_role, $def_privs, $target_user_id);
+                        }
+                    } else {
+                        $stmt_r = mysqli_prepare($conn, "UPDATE user SET role = ? WHERE idno = ?");
+                        if ($stmt_r) {
+                            mysqli_stmt_bind_param($stmt_r, "ss", $new_role, $target_user_id);
+                        }
+                    }
+                } else {
+                    $stmt_r = mysqli_prepare($conn, "UPDATE user SET role = ? WHERE idno = ?");
+                    if ($stmt_r) {
+                        mysqli_stmt_bind_param($stmt_r, "ss", $new_role, $target_user_id);
+                    }
+                }
+
                 if ($stmt_r) {
-                    mysqli_stmt_bind_param($stmt_r, "ss", $new_role, $target_user_id);
                     mysqli_stmt_execute($stmt_r);
                     mysqli_stmt_close($stmt_r);
 
@@ -678,7 +866,11 @@ switch ($method) {
                     exit();
                 }
 
-                $privs = isset($data['privileges']) && is_array($data['privileges']) ? json_encode($data['privileges']) : null;
+                $privs_in = isset($data['privileges']) && is_array($data['privileges']) ? $data['privileges'] : [];
+                if ($target_user['role'] === 'admin') {
+                    $privs_in = array_values(array_unique(array_merge(['view_users', 'create_users', 'approve_users'], $privs_in)));
+                }
+                $privs = !empty($privs_in) ? json_encode($privs_in) : null;
                 $stmt_p = mysqli_prepare($conn, "UPDATE user SET privileges = ? WHERE idno = ?");
                 if ($stmt_p) {
                     mysqli_stmt_bind_param($stmt_p, "ss", $privs, $target_user_id);
@@ -694,15 +886,21 @@ switch ($method) {
                 break;
 
             case 'update_user_info':
-                $idno = $target_user['idno']; // Cannot be modified
-                $username = $target_user['username']; // Cannot be modified
-                $firstname = trim($data['firstname'] ?? '');
-                $lastname = trim($data['lastname'] ?? '');
-                $middlename = trim($data['middlename'] ?? '');
-                $suffix = trim($data['suffix'] ?? '');
-                $email = trim($data['email'] ?? ($target_user['email'] ?? ''));
-                $role = trim($data['role'] ?? $target_user['role']);
-                $status = trim($data['status'] ?? $target_user['status']);
+                $idno = $target_user['idno'] ?? $target_user_id; // Cannot be modified
+                $username = $target_user['username'] ?? ''; // Cannot be modified
+                $firstname = !empty(trim($data['firstname'] ?? '')) ? trim($data['firstname']) : ($target_user['firstname'] ?? '');
+                $lastname = !empty(trim($data['lastname'] ?? '')) ? trim($data['lastname']) : ($target_user['lastname'] ?? '');
+                $middlename = !empty(trim($data['middlename'] ?? '')) ? trim($data['middlename']) : ($target_user['middlename'] ?? '');
+                $suffix = !empty(trim($data['suffix'] ?? '')) ? trim($data['suffix']) : ($target_user['suffix'] ?? '');
+                $email = !empty(trim($data['email'] ?? '')) ? trim($data['email']) : ($target_user['email'] ?? '');
+                if (empty($email)) {
+                    $a_chk = mysqli_query($conn, "SELECT email FROM `admins` WHERE user_idno = '$target_user_id' LIMIT 1");
+                    if ($a_chk && ($ar = mysqli_fetch_assoc($a_chk)) && !empty($ar['email'])) {
+                        $email = $ar['email'];
+                    }
+                }
+                $role = trim($data['role'] ?? ($target_user['role'] ?? 'user'));
+                $status = trim($data['status'] ?? ($target_user['status'] ?? 'inactive'));
                 $new_password = trim($data['password'] ?? '');
 
                 $fn_err = scanNameFieldServer($firstname, 'Firstname');
@@ -746,13 +944,26 @@ switch ($method) {
                         echo json_encode(['error' => 'New password must be at least 8 characters long.']);
                         exit();
                     }
-                    if (!preg_match('/[A-Z]/', $new_password) || !preg_match('/[0-9]/', $new_password) || !preg_match('/[!@#$%^&*()_+\-=\[\]{};\':"\\\\|,.<>\/?]/', $new_password)) {
+                    if (strlen($new_password) > 25) {
                         http_response_code(400);
-                        echo json_encode(['error' => 'New password must include uppercase, number, and special character.']);
+                        echo json_encode(['error' => 'New password should not exceed 25 characters.']);
                         exit();
                     }
+                    if (!preg_match('/[A-Z]/', $new_password) || !preg_match('/[a-z]/', $new_password) || !preg_match('/[0-9]/', $new_password) || !preg_match('/[!@#$%^&*()_+\-=\[\]{};\':"\\\\|,.<>\/?]/', $new_password)) {
+                        http_response_code(400);
+                        echo json_encode(['error' => 'New password is too weak. Must include uppercase, lowercase, number, and special character.']);
+                        exit();
+                    }
+                    for ($i = 0; $i < strlen($new_password) - 2; $i++) {
+                        if ($new_password[$i] === $new_password[$i+1] && $new_password[$i] === $new_password[$i+2]) {
+                            http_response_code(400);
+                            echo json_encode(['error' => 'New password is too weak. Cannot contain 3 consecutive repeated characters.']);
+                            exit();
+                        }
+                    }
                     $pwd_hash = password_hash($new_password, PASSWORD_DEFAULT);
-                    $pwd_sql = ", password = '" . mysqli_real_escape_string($conn, $pwd_hash) . "', must_change_password = 1";
+                    $is_default_pwd = ($new_password === '@Abcde12345') ? 1 : 0;
+                    $pwd_sql = ", password = '" . mysqli_real_escape_string($conn, $pwd_hash) . "', must_change_password = $is_default_pwd";
                 }
 
                 // Handle privileges if superadmin
@@ -761,9 +972,23 @@ switch ($method) {
                     $all_privs = ['view_users', 'create_users', 'edit_users', 'delete_users', 'block_users', 'view_audit_logs', 'approve_users'];
                     $priv_json = mysqli_real_escape_string($conn, json_encode($all_privs));
                     $priv_sql = ", privileges = '$priv_json'";
-                } elseif ($current_role === 'superadmin' && isset($data['privileges']) && is_array($data['privileges'])) {
-                    $priv_json = mysqli_real_escape_string($conn, json_encode($data['privileges']));
-                    $priv_sql = ", privileges = '$priv_json'";
+                } elseif ($current_role === 'superadmin') {
+                    if (isset($data['privileges']) && is_array($data['privileges'])) {
+                        $priv_arr = $data['privileges'];
+                        if ($role === 'admin' && empty($priv_arr)) {
+                            $priv_arr = ['view_users', 'create_users', 'approve_users'];
+                        }
+                        $priv_json = mysqli_real_escape_string($conn, json_encode(array_values(array_unique($priv_arr))));
+                        $priv_sql = ", privileges = '$priv_json'";
+                    } elseif ($role === 'admin') {
+                        $chk_p = mysqli_query($conn, "SELECT privileges FROM user WHERE idno = '" . mysqli_real_escape_string($conn, $target_user_id) . "' LIMIT 1");
+                        if ($chk_p && $p_row = mysqli_fetch_assoc($chk_p)) {
+                            if (empty($p_row['privileges']) || $p_row['privileges'] === 'null' || $p_row['privileges'] === '[]') {
+                                $priv_json = mysqli_real_escape_string($conn, json_encode(['view_users', 'create_users', 'approve_users']));
+                                $priv_sql = ", privileges = '$priv_json'";
+                            }
+                        }
+                    }
                 }
 
                 $update_query = "UPDATE user SET 
@@ -775,7 +1000,8 @@ switch ($method) {
                     suffix = '" . mysqli_real_escape_string($conn, $suffix) . "',
                     email = '" . mysqli_real_escape_string($conn, $email) . "',
                     role = '" . mysqli_real_escape_string($conn, $role) . "',
-                    status = '" . mysqli_real_escape_string($conn, $status) . "'
+                    status = '" . mysqli_real_escape_string($conn, $status) . "',
+                    profile_completed = 1
                     $pwd_sql
                     $priv_sql
                     WHERE idno = '" . mysqli_real_escape_string($conn, $target_user_id) . "'";
@@ -788,6 +1014,18 @@ switch ($method) {
                     if ($role === 'superadmin' && $status === 'active') {
                         $esc_target = mysqli_real_escape_string($conn, $idno);
                         mysqli_query($conn, "UPDATE user SET status = 'inactive', is_online = 0 WHERE role = 'superadmin' AND idno != '$esc_target'");
+                        @mysqli_query($conn, "UPDATE `admins` SET status = 'Active' WHERE user_idno = '$esc_target'");
+                        @mysqli_query($conn, "UPDATE `admins` SET status = 'Inactive' WHERE user_idno != '$esc_target'");
+
+                        // Dispatch activation notification email via Gmail SMTP
+                        $target_email_q = mysqli_query($conn, "SELECT email, firstname, lastname, username FROM user WHERE idno = '$esc_target' LIMIT 1");
+                        if ($target_email_q && $t_row = mysqli_fetch_assoc($target_email_q)) {
+                            $t_email = $t_row['email'];
+                            $t_name = trim($t_row['firstname'] . ' ' . $t_row['lastname']) ?: $t_row['username'];
+                            if (!empty($t_email)) {
+                                send_superadmin_activated_notification($t_email, $t_name);
+                            }
+                        }
 
                         // If the currently logged-in superadmin activated another superadmin, the current user is now inactive
                         if ($target_user_id !== $current_user_id) {
@@ -798,6 +1036,7 @@ switch ($method) {
                         }
                     }
 
+                    if (ob_get_length()) ob_clean();
                     if ($is_self_deactivated) {
                         echo json_encode([
                             'success' => true,

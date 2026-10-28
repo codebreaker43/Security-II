@@ -38,11 +38,25 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['action']) && $_POST['a
         $new_pwd = isset($_POST['new_password']) ? $_POST['new_password'] : '';
         $confirm_pwd = isset($_POST['confirm_password']) ? $_POST['confirm_password'] : '';
 
-        // Password complexity validation
+        // Password complexity & anti-weak validation
         $has_upper = preg_match('/[A-Z]/', $new_pwd);
         $has_lower = preg_match('/[a-z]/', $new_pwd);
         $has_digit = preg_match('/[0-9]/', $new_pwd);
-        $has_special = preg_match('/[!@#$%^&*(),.?":{}|<>_\-\=\+]/', $new_pwd);
+        $has_special = preg_match('/[!@#$%^&*(),.?":{}|<>_\-\=\+\/\[\]\\\\]/', $new_pwd);
+
+        // Check for 3 consecutive repeated characters (e.g. aaa, 111, @@@)
+        $has_consecutive = false;
+        $len = strlen($new_pwd);
+        for ($i = 0; $i < $len - 2; $i++) {
+            if ($new_pwd[$i] === $new_pwd[$i+1] && $new_pwd[$i] === $new_pwd[$i+2]) {
+                $has_consecutive = true;
+                break;
+            }
+        }
+
+        // Common weak passwords
+        $weak_list = ['password', '12345678', '123456789', 'admin123', 'qwerty123', 'pass1234', 'welcome1', 'superadmin'];
+        $is_common_weak = in_array(strtolower($new_pwd), $weak_list);
 
         if (empty($new_pwd) || empty($confirm_pwd)) {
             $pwd_change_error = "Please fill in both password fields.";
@@ -50,11 +64,20 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['action']) && $_POST['a
         } elseif ($new_pwd !== $confirm_pwd) {
             $pwd_change_error = "Passwords do not match.";
             $show_change_pwd_modal = true;
-        } elseif (strlen($new_pwd) < 8 || !$has_upper || !$has_lower || !$has_digit || !$has_special) {
-            $pwd_change_error = "Password must be at least 8 characters long and include uppercase, lowercase, number, and a special character.";
-            $show_change_pwd_modal = true;
         } elseif ($new_pwd === '@Abcde12345') {
             $pwd_change_error = "New password cannot be the default password. Please choose a unique password.";
+            $show_change_pwd_modal = true;
+        } elseif ($len < 8) {
+            $pwd_change_error = "Password is too weak. It must be at least 8 characters long.";
+            $show_change_pwd_modal = true;
+        } elseif (!$has_upper || !$has_lower || !$has_digit || !$has_special) {
+            $pwd_change_error = "Password is too weak. It must include uppercase, lowercase, number, and a special character.";
+            $show_change_pwd_modal = true;
+        } elseif ($has_consecutive) {
+            $pwd_change_error = "Password is too weak. It cannot contain three consecutive repeated characters.";
+            $show_change_pwd_modal = true;
+        } elseif ($is_common_weak) {
+            $pwd_change_error = "Password is too weak. Please choose a stronger password.";
             $show_change_pwd_modal = true;
         } else {
             // Update password and clear must_change_password flag
@@ -83,13 +106,20 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['action']) && $_POST['a
             $_SESSION['user_id'] = $user_id;
             $_SESSION['username'] = $user_name;
 
-            // Check if user has already completed personal information and security setup
-            require_once __DIR__ . '/includes/auth_guard.php';
-            $is_already_complete = check_user_personal_info_complete($conn, $user_id);
+            // Check if user is an existing account (profile_completed = 1)
             $uid_c = mysqli_real_escape_string($conn, $user_id);
+            $p_chk = mysqli_query($conn, "SELECT profile_completed FROM user WHERE idno = '$uid_c' LIMIT 1");
+            $is_already_complete = ($p_chk && ($pr = mysqli_fetch_assoc($p_chk)) && intval($pr['profile_completed']) === 1);
+
+            if (!$is_already_complete) {
+                require_once __DIR__ . '/includes/auth_guard.php';
+                $is_already_complete = check_user_personal_info_complete($conn, $user_id);
+                if ($is_already_complete) {
+                    @mysqli_query($conn, "UPDATE user SET profile_completed = 1 WHERE idno = '$uid_c'");
+                }
+            }
 
             $_SESSION['profile_completed'] = $is_already_complete ? 1 : 0;
-            @mysqli_query($conn, "UPDATE user SET profile_completed = " . ($is_already_complete ? "1" : "0") . " WHERE idno = '$uid_c'");
 
             unset($_SESSION['pending_user_id']);
             unset($_SESSION['pending_user_role']);
@@ -109,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['action']) && $_POST['a
                 mysqli_stmt_close($stmt_log);
             }
 
-            // Redirect to complete_profile.php if personal details NOT yet completed!
+            // Redirect to complete_profile.php ONLY for brand new accounts that still need to complete profile
             if (!$is_already_complete) {
                 header("Location: complete_profile.php");
                 exit();
@@ -164,32 +194,55 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
                     } elseif ($user_status === 'inactive') {
                         $_SESSION['login_attempts'] += 1;
                         $error_message = "This account is inactive. Please contact an administrator.";
+                    } elseif ($user_status === 'pending') {
+                        $_SESSION['login_attempts'] += 1;
+                        $error_message = "Your registration is currently pending administrator approval.";
+                    } elseif ($user_status === 'pending_deletion') {
+                        $_SESSION['login_attempts'] += 1;
+                        $error_message = "This account has a pending deletion request under review by the Super Admin.";
                     } else {
                         // Restrict Concurrent Super Admin Logins: Enforce single active Super Admin session
                         $role = isset($user_data['role']) ? $user_data['role'] : 'user';
                         $is_superadmin_blocked = false;
 
                         if ($role === 'superadmin') {
+                            // Check status in user table
+                            if (strtolower($user_status) !== 'active') {
+                                $is_superadmin_blocked = true;
+                                $error_message = "This Super Admin account is currently Inactive. Only ONE (1) Super Admin can be Active at a time.";
+                            } else {
+                                // Account is active: sync admins table to ensure it matches
+                                $u_idno_esc = mysqli_real_escape_string($conn, $user_data['idno']);
+                                @mysqli_query($conn, "UPDATE `admins` SET status = 'Active' WHERE user_idno = '$u_idno_esc'");
+                                @mysqli_query($conn, "UPDATE `admins` SET status = 'Inactive' WHERE user_idno != '$u_idno_esc'");
+                            }
+
                             // Automatically expire stale sessions (> 15 minutes of inactivity)
                             @mysqli_query($conn, "UPDATE user SET is_online = 0 WHERE role = 'superadmin' AND is_online = 1 AND last_activity IS NOT NULL AND last_activity < NOW() - INTERVAL 15 MINUTE");
+                            // Ensure inactive superadmins are never considered online
+                            @mysqli_query($conn, "UPDATE user SET is_online = 0 WHERE role = 'superadmin' AND status != 'active'");
 
-                            // Check if another Super Admin is currently online
-                            $check_sa = mysqli_prepare($conn, "SELECT idno, username FROM user WHERE role = 'superadmin' AND is_online = 1 AND idno != ? LIMIT 1");
-                            if ($check_sa) {
-                                mysqli_stmt_bind_param($check_sa, "s", $user_data['idno']);
-                                mysqli_stmt_execute($check_sa);
-                                $res_sa = mysqli_stmt_get_result($check_sa);
-                                if ($res_sa && mysqli_num_rows($res_sa) > 0) {
-                                    $is_superadmin_blocked = true;
-                                    $error_message = "Another Super Admin is currently active. Only one Super Admin can be logged in at a time.";
+                            // Check if another Super Admin is currently online (only consider active accounts)
+                            if (!$is_superadmin_blocked) {
+                                $check_sa = mysqli_prepare($conn, "SELECT idno, username FROM user WHERE role = 'superadmin' AND status = 'active' AND is_online = 1 AND idno != ? LIMIT 1");
+                                if ($check_sa) {
+                                    mysqli_stmt_bind_param($check_sa, "s", $user_data['idno']);
+                                    mysqli_stmt_execute($check_sa);
+                                    $res_sa = mysqli_stmt_get_result($check_sa);
+                                    if ($res_sa && mysqli_num_rows($res_sa) > 0) {
+                                        $is_superadmin_blocked = true;
+                                        $error_message = "Another Super Admin is currently active. Only one Super Admin can be logged in at a time.";
+                                    }
+                                    mysqli_stmt_close($check_sa);
                                 }
-                                mysqli_stmt_close($check_sa);
                             }
                         }
 
                         if (!$is_superadmin_blocked) {
-                            // Check if password change is required (must_change_password == 1 or password is default @Abcde12345)
-                            $must_change = (isset($user_data['must_change_password']) && intval($user_data['must_change_password']) === 1) || password_verify('@Abcde12345', $user_data['password']);
+                            // Check if password change is required (only for accounts actually using default @Abcde12345 or new accounts with must_change_password)
+                            $is_default_pwd = password_verify('@Abcde12345', $user_data['password']);
+                            $is_profile_completed = isset($user_data['profile_completed']) && intval($user_data['profile_completed']) === 1;
+                            $must_change = $is_default_pwd || (!empty($user_data['must_change_password']) && intval($user_data['must_change_password']) === 1 && !$is_profile_completed);
 
                             if ($must_change) {
                                 $_SESSION['pending_user_id'] = $user_data['idno'];
@@ -232,18 +285,23 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
                                 mysqli_stmt_close($stmt_log);
                             }
 
-                            // Check if personal information and security setup is fully completed
-                            require_once __DIR__ . '/includes/auth_guard.php';
-                            $has_complete_profile = check_user_personal_info_complete($conn, $user_data['idno']);
-                            $uid_c = mysqli_real_escape_string($conn, $user_data['idno']);
-
-                            $_SESSION['profile_completed'] = $has_complete_profile ? 1 : 0;
-                            @mysqli_query($conn, "UPDATE user SET profile_completed = " . ($has_complete_profile ? "1" : "0") . " WHERE idno = '$uid_c'");
-
-                            // Require profile completion before dashboard access (only if NOT completed!)
-                            if (!$has_complete_profile) {
-                                header("Location: complete_profile.php");
-                                exit();
+                            // RULE: Profile completion check
+                            // OLD / EXISTING accounts (profile_completed = 1) must NEVER be redirected to complete_profile.php!
+                            // ONLY brand new accounts (profile_completed = 0) must complete setup.
+                            if ($is_profile_completed) {
+                                $_SESSION['profile_completed'] = 1;
+                            } else {
+                                require_once __DIR__ . '/includes/auth_guard.php';
+                                $has_complete_profile = check_user_personal_info_complete($conn, $user_data['idno']);
+                                if ($has_complete_profile) {
+                                    $_SESSION['profile_completed'] = 1;
+                                    $uid_c = mysqli_real_escape_string($conn, $user_data['idno']);
+                                    @mysqli_query($conn, "UPDATE user SET profile_completed = 1 WHERE idno = '$uid_c'");
+                                } else {
+                                    $_SESSION['profile_completed'] = 0;
+                                    header("Location: complete_profile.php");
+                                    exit();
+                                }
                             }
 
                             if ($role === 'superadmin') {
@@ -309,21 +367,21 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --accent-gold: #fbbf24;
-            --accent-gold-hover: #f59e0b;
-            --accent-gold-glow: rgba(245, 158, 11, 0.35);
+            --accent-gold: #d97706;
+            --accent-gold-hover: #b45309;
+            --accent-gold-glow: rgba(217, 119, 6, 0.25);
             --accent-red: #ef4444;
             --accent-orange: #f97316;
             --accent-orange-hover: #ea580c;
-            --accent-orange-glow: rgba(234, 88, 12, 0.35);
+            --accent-orange-glow: rgba(234, 88, 12, 0.25);
             --dark-bg: #0b1120;
-            --card-bg: linear-gradient(145deg, rgba(15, 23, 42, 0.92) 0%, rgba(24, 34, 53, 0.90) 100%);
-            --input-bg: rgba(8, 12, 22, 0.75);
-            --input-border: rgba(255, 255, 255, 0.25);
-            --input-border-focus: #fbbf24;
-            --text-main: #ffffff;
-            --text-muted: #cbd5e1;
-            --text-label: #fbbf24;
+            --card-bg: rgba(255, 255, 255, 0.96);
+            --input-bg: #f8fafc;
+            --input-border: #cbd5e1;
+            --input-border-focus: #f59e0b;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --text-label: #1e293b;
             --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             --font-heading: 'Outfit', sans-serif;
         }
@@ -343,7 +401,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
         body {
             font-family: var(--font-main);
             background-color: var(--dark-bg);
-            color: var(--text-main);
+            color: #ffffff;
             display: flex;
             flex-direction: column;
             background-image:
@@ -477,12 +535,12 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             background: var(--card-bg);
             backdrop-filter: blur(25px) saturate(180%);
             -webkit-backdrop-filter: blur(25px) saturate(180%);
-            border: 1px solid rgba(245, 158, 11, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.85);
             border-radius: 16px;
             padding: 1.6rem 2.2rem;
             width: 100%;
             max-width: 440px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(245, 158, 11, 0.12);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 0 30px rgba(245, 158, 11, 0.15);
             position: relative;
         }
 
@@ -509,21 +567,21 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             height: 28px;
             background: linear-gradient(180deg, #f59e0b 0%, #ef4444 100%);
             border-radius: 4px;
-            box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
         }
 
         .form-title {
             font-family: var(--font-heading);
             font-size: 1.55rem;
             font-weight: 800;
-            color: #ffffff;
+            color: #0f172a;
             letter-spacing: 0.5px;
             line-height: 1.1;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+            text-shadow: none;
         }
 
         .form-subtitle {
-            color: #cbd5e1;
+            color: #64748b;
             font-size: 0.86rem;
             margin-left: calc(5px + 0.75rem);
             font-weight: 500;
@@ -543,7 +601,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             height: 8px;
             border-radius: 50%;
             background: #f59e0b;
-            box-shadow: 0 0 8px #f59e0b;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
             flex-shrink: 0;
         }
 
@@ -552,8 +610,8 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             font-size: 0.82rem;
             font-weight: 800;
             letter-spacing: 1.5px;
-            color: #fbbf24;
-            text-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+            color: #d97706;
+            text-shadow: none;
             text-transform: uppercase;
             white-space: nowrap;
         }
@@ -561,7 +619,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
         .section-line {
             flex: 1;
             height: 1px;
-            background: repeating-linear-gradient(to right, rgba(245, 158, 11, 0.4) 0, rgba(245, 158, 11, 0.4) 4px, transparent 4px, transparent 8px);
+            background: repeating-linear-gradient(to right, rgba(217, 119, 6, 0.35) 0, rgba(217, 119, 6, 0.35) 4px, transparent 4px, transparent 8px);
         }
 
         /* Form Inputs */
@@ -578,11 +636,11 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             gap: 0.35rem;
             font-size: 0.82rem;
             font-weight: 700;
-            color: #fbbf24;
+            color: #1e293b;
             text-transform: uppercase;
             letter-spacing: 0.6px;
             margin-bottom: 0.35rem;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            text-shadow: none;
         }
 
         .req-star {
@@ -597,15 +655,14 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             border: 1.5px solid var(--input-border);
             border-radius: 8px;
             padding: 0 0.95rem;
-            color: #ffffff !important;
+            color: #0f172a !important;
             font-weight: 600;
             font-family: var(--font-main);
             font-size: 0.95rem;
             transition: all 0.2s ease;
             box-sizing: border-box;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
             outline: none;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
         }
 
         .input-control::placeholder {
@@ -614,10 +671,10 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
         }
 
         .input-control:focus {
-            border-color: #fbbf24 !important;
-            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35) !important;
-            background: rgba(15, 23, 42, 0.95) !important;
-            color: #ffffff !important;
+            border-color: #f59e0b !important;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2) !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
         }
 
         /* Autofill High Contrast Fix */
@@ -625,9 +682,9 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
         .input-control:-webkit-autofill:hover, 
         .input-control:-webkit-autofill:focus, 
         .input-control:-webkit-autofill:active {
-            -webkit-box-shadow: 0 0 0 1000px #090d16 inset !important;
-            -webkit-text-fill-color: #ffffff !important;
-            caret-color: #ffffff !important;
+            -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+            -webkit-text-fill-color: #0f172a !important;
+            caret-color: #0f172a !important;
             transition: background-color 5000s ease-in-out 0s;
         }
 
@@ -657,21 +714,21 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
         }
 
         .checkbox-label {
-            color: #e2e8f0;
+            color: #334155;
             font-weight: 600;
             font-size: 0.85rem;
         }
 
         .forgot-link-btn {
-            color: #f59e0b;
-            font-weight: 600;
+            color: #d97706;
+            font-weight: 700;
             text-decoration: none;
             font-size: 0.82rem;
             transition: color 0.2s ease;
         }
 
         .forgot-link-btn:hover {
-            color: #fbbf24;
+            color: #ea580c;
             text-decoration: underline;
         }
 
@@ -708,7 +765,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
 
         /* Error Messages & Alerts */
         .error-message {
-            color: #f87171;
+            color: #dc2626;
             font-size: 0.74rem;
             font-weight: 600;
             margin-top: 3px;
@@ -716,9 +773,9 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
         }
 
         .alert-box {
-            background: rgba(239, 68, 68, 0.12);
-            border: 1px solid rgba(239, 68, 68, 0.35);
-            color: #fca5a5;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
             padding: 0.65rem 0.95rem;
             border-radius: 8px;
             font-size: 0.82rem;
@@ -746,7 +803,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             gap: 0.75rem;
             font-size: 0.75rem;
             font-weight: 500;
-            color: rgba(254, 202, 202, 0.8);
+            color: #991b1b;
         }
 
         .alert-stat {
@@ -756,17 +813,17 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
         }
 
         .alert-stat-label {
-            opacity: 0.7;
+            opacity: 0.8;
             font-weight: 500;
         }
 
         .alert-stat-value {
             font-weight: 700;
-            color: #fca5a5;
+            color: #7f1d1d;
         }
 
         .alert-stat-divider {
-            opacity: 0.35;
+            opacity: 0.4;
             font-size: 0.85rem;
         }
 
@@ -776,9 +833,9 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            background: rgba(245, 158, 11, 0.1);
-            border: 1px solid rgba(245, 158, 11, 0.35);
-            color: #fbbf24;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #b45309;
             padding: 0.45rem 0.8rem;
             border-radius: 8px;
             font-size: 0.8rem;
@@ -788,7 +845,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
         }
 
         .attempt-counter-box strong {
-            color: #fef08a;
+            color: #78350f;
             font-size: 0.95rem;
             font-weight: 800;
             font-family: monospace;
@@ -817,14 +874,14 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
         }
 
         body.countdown-active .form-card input {
-            background: #090e18 !important;
-            border-color: rgba(255, 255, 255, 0.04) !important;
-            color: #475569 !important;
+            background: #f1f5f9 !important;
+            border-color: #cbd5e1 !important;
+            color: #94a3b8 !important;
         }
 
         body.countdown-active .btn-step-submit {
-            background: #1e293b !important;
-            color: #64748b !important;
+            background: #e2e8f0 !important;
+            color: #94a3b8 !important;
             box-shadow: none !important;
             transform: none !important;
             cursor: not-allowed !important;
@@ -832,9 +889,9 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
 
         /* In-form Lockout Countdown Banner */
         .lockout-box {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(239, 68, 68, 0.18) 100%);
-            border: 1px solid rgba(245, 158, 11, 0.6);
-            color: #fed7aa;
+            background: #fff7ed;
+            border: 1px solid #fdba74;
+            color: #9a3412;
             padding: 0.85rem 1rem;
             border-radius: 12px;
             font-size: 0.86rem;
@@ -844,15 +901,15 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             align-items: center;
             gap: 0.75rem;
             text-align: left;
-            box-shadow: 0 0 25px rgba(245, 158, 11, 0.25);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15);
             animation: pulse-glow 2s infinite ease-in-out;
         }
 
         .lockout-box .lock-icon-wrap {
             width: 38px;
             height: 38px;
-            background: rgba(245, 158, 11, 0.2);
-            border: 1px solid rgba(245, 158, 11, 0.5);
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.35);
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -871,7 +928,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             font-family: var(--font-heading);
             font-size: 0.9rem;
             font-weight: 800;
-            color: #ffffff;
+            color: #7c2d12;
             letter-spacing: 0.5px;
             display: flex;
             align-items: center;
@@ -886,43 +943,43 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             background: #f59e0b;
             padding: 0.15rem 0.55rem;
             border-radius: 6px;
-            box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
         }
 
         .lockout-box .lock-desc {
             font-size: 0.78rem;
-            color: #cbd5e1;
+            color: #9a3412;
             font-weight: 500;
             line-height: 1.3;
         }
 
         .lockout-box strong {
-            color: #ffffff;
+            color: #7c2d12;
             font-size: 1rem;
             font-weight: 800;
-            background: rgba(245, 158, 11, 0.25);
+            background: rgba(245, 158, 11, 0.2);
             padding: 0.12rem 0.4rem;
             border-radius: 6px;
-            border: 1px solid rgba(245, 158, 11, 0.4);
+            border: 1px solid rgba(245, 158, 11, 0.35);
             margin: 0 0.2rem;
             font-family: monospace;
         }
 
         @keyframes pulse-glow {
             0%, 100% {
-                box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
-                border-color: rgba(245, 158, 11, 0.35);
+                box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+                border-color: rgba(245, 158, 11, 0.3);
             }
             50% {
-                box-shadow: 0 0 25px rgba(245, 158, 11, 0.45);
-                border-color: rgba(245, 158, 11, 0.65);
+                box-shadow: 0 0 25px rgba(245, 158, 11, 0.3);
+                border-color: rgba(245, 158, 11, 0.55);
             }
         }
 
         .unlock-box {
-            background: rgba(34, 197, 94, 0.12);
-            border: 1px solid rgba(34, 197, 94, 0.4);
-            color: #4ade80;
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            color: #166534;
             padding: 0.65rem 0.9rem;
             border-radius: 8px;
             font-size: 0.82rem;
@@ -940,13 +997,13 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             text-align: center;
             margin-top: 1rem;
             padding-top: 1rem;
-            border-top: 1px solid rgba(245, 158, 11, 0.15);
-            font-size: 0.82rem;
-            color: var(--text-muted);
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.84rem;
+            color: #64748b;
         }
 
         .auth-footer-link a {
-            color: #f59e0b;
+            color: #d97706;
             text-decoration: none;
             font-weight: 700;
             margin-left: 0.3rem;
@@ -954,7 +1011,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
         }
 
         .auth-footer-link a:hover {
-            color: #fbbf24;
+            color: #ea580c;
             text-decoration: underline;
         }
 
@@ -963,13 +1020,13 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             border-top: 1px solid rgba(245, 158, 11, 0.15);
             padding: 0.6rem 1rem;
             text-align: center;
-            color: #64748b;
+            color: #cbd5e1;
             font-size: 0.78rem;
             margin-top: auto;
         }
 
         footer a {
-            color: #64748b;
+            color: #cbd5e1;
             text-decoration: none;
             transition: color 0.2s ease;
         }
@@ -996,13 +1053,13 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
         }
 
         .first-login-modal-card {
-            background: linear-gradient(145deg, rgba(15, 23, 42, 0.96) 0%, rgba(24, 34, 53, 0.94) 100%);
-            border: 1px solid rgba(245, 158, 11, 0.4);
+            background: #ffffff;
+            border: 1px solid rgba(226, 232, 240, 0.9);
             border-radius: 16px;
             padding: 2rem;
             max-width: 460px;
             width: 100%;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 35px rgba(245, 158, 11, 0.15);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3), 0 0 35px rgba(245, 158, 11, 0.15);
             text-align: center;
         }
 
@@ -1010,7 +1067,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             width: 54px;
             height: 54px;
             border-radius: 50%;
-            background: rgba(245, 158, 11, 0.15);
+            background: rgba(245, 158, 11, 0.12);
             border: 1.5px solid rgba(245, 158, 11, 0.4);
             display: inline-flex;
             align-items: center;
@@ -1022,14 +1079,14 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             font-family: var(--font-heading);
             font-size: 1.35rem;
             font-weight: 800;
-            color: #ffffff;
+            color: #0f172a;
             margin-bottom: 0.5rem;
             letter-spacing: 0.5px;
         }
 
         .modal-desc {
             font-size: 0.85rem;
-            color: #cbd5e1;
+            color: #64748b;
             margin-bottom: 1.25rem;
             line-height: 1.4;
         }
@@ -1369,7 +1426,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
     <div class="first-login-modal-overlay" id="firstLoginModal" style="display: flex;">
         <div class="first-login-modal-card">
             <div class="modal-header-badge">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff5500" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
@@ -1386,7 +1443,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             </div>
             <?php endif; ?>
 
-            <form method="post" action="" style="width: 100%;">
+            <form id="firstLoginPwdForm" method="post" action="" style="width: 100%;" onsubmit="return validateFirstLoginPwdForm(event);">
                 <input type="hidden" name="action" value="change_first_login_password">
                 <input type="hidden" name="pending_user_id" value="<?php echo htmlspecialchars($_SESSION['pending_user_id'] ?? ''); ?>">
                 <input type="hidden" name="pending_user_role" value="<?php echo htmlspecialchars($_SESSION['pending_user_role'] ?? ''); ?>">
@@ -1394,28 +1451,45 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
 
                 <div class="form-group" style="text-align: left;">
                     <label class="form-label">New Password <span class="req-star">*</span></label>
-                    <input type="password" name="new_password" id="firstLoginNewPwd" class="input-control" placeholder="Enter new secure password" required autocomplete="new-password">
+                    <input type="password" name="new_password" id="firstLoginNewPwd" class="input-control" placeholder="Enter new secure password" required autocomplete="new-password" oninput="checkFirstLoginPasswordStrength(false)" onblur="checkFirstLoginPasswordStrength(true)">
+                    
+                    <!-- Password Strength Meter -->
+                    <div id="firstLoginStrengthWrap" style="margin-top: 8px; display: none;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Password Strength:</span>
+                            <span id="firstLoginStrengthLabel" style="font-size: 0.75rem; font-weight: 700; color: #ef4444;">Weak</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; height: 5px;">
+                            <div id="firstLoginBar1" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
+                            <div id="firstLoginBar2" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
+                            <div id="firstLoginBar3" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
+                            <div id="firstLoginBar4" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
+                        </div>
+                    </div>
+                    <small id="firstLoginPwdError" style="color: #ef4444; font-size: 0.76rem; font-weight: 600; margin-top: 4px; display: none;"></small>
                 </div>
 
                 <div class="form-group" style="text-align: left;">
                     <label class="form-label">Confirm New Password <span class="req-star">*</span></label>
-                    <input type="password" name="confirm_password" id="firstLoginConfirmPwd" class="input-control" placeholder="Re-type new password" required autocomplete="new-password">
+                    <input type="password" name="confirm_password" id="firstLoginConfirmPwd" class="input-control" placeholder="Re-type new password" required autocomplete="new-password" oninput="checkFirstLoginConfirmPassword(false)" onblur="checkFirstLoginConfirmPassword(true)">
+                    <small id="firstLoginConfirmError" style="color: #ef4444; font-size: 0.76rem; font-weight: 600; margin-top: 4px; display: none;"></small>
                 </div>
 
-                <div class="form-options-row" style="margin-bottom: 1rem;">
+                <div class="form-options-row" style="margin-bottom: 1rem; text-align: left;">
                     <label class="checkbox-container">
                         <input type="checkbox" id="toggleFirstLoginPwd">
-                        <span class="checkbox-label">Show Passwords</span>
+                        <span class="checkbox-label" style="color: #334155; font-weight: 600;">Show Passwords</span>
                     </label>
                 </div>
 
-                <div class="password-guidelines" style="text-align: left; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.78rem; color: #94a3b8;">
-                    <div style="font-weight: 700; color: #cbd5e1; margin-bottom: 0.35rem;">Password Requirements:</div>
-                    <ul style="margin-left: 1.2rem; line-height: 1.4;">
-                        <li>At least 8 characters long</li>
+                <div class="password-guidelines" style="text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 1.25rem; font-size: 0.80rem; color: #475569;">
+                    <div style="font-weight: 700; color: #0f172a; margin-bottom: 0.35rem;">Password Requirements:</div>
+                    <ul style="margin-left: 1.2rem; line-height: 1.45;">
+                        <li>At least 8 characters long (Max 25 characters)</li>
                         <li>At least 1 uppercase and 1 lowercase letter</li>
                         <li>At least 1 number and 1 special symbol (!@#$%^&*)</li>
                         <li>Cannot be the default password (@Abcde12345)</li>
+                        <li>Cannot contain three consecutive repeating characters</li>
                     </ul>
                 </div>
 
@@ -1445,9 +1519,9 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             animation: fadeIn 0.3s ease;
         }
         .first-login-modal-card {
-            background: rgba(9, 18, 32, 0.95);
-            border: 1px solid rgba(245, 158, 11, 0.4);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(245, 158, 11, 0.2);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.45), 0 0 35px rgba(245, 158, 11, 0.15);
             border-radius: 16px;
             max-width: 460px;
             width: 100%;
@@ -1456,32 +1530,47 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             display: flex;
             flex-direction: column;
             align-items: center;
+            color: #0f172a;
         }
         .modal-header-badge {
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: rgba(245, 158, 11, 0.15);
-            border: 1px solid rgba(245, 158, 11, 0.45);
+            background: #fffbeb;
+            border: 1.5px solid #fde68a;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 1rem;
-            box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.2);
         }
         .modal-title {
             font-family: var(--font-heading, sans-serif);
             font-size: 1.4rem;
             font-weight: 800;
-            color: #ffffff;
+            color: #0f172a;
             margin-bottom: 0.4rem;
             letter-spacing: 0.5px;
         }
         .modal-desc {
-            font-size: 0.84rem;
-            color: #94a3b8;
+            font-size: 0.86rem;
+            color: #64748b;
             margin-bottom: 1.25rem;
-            line-height: 1.4;
+            line-height: 1.45;
+        }
+        .first-login-modal-card .form-label {
+            color: #1e293b !important;
+            font-weight: 700;
+        }
+        .first-login-modal-card .input-control {
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
+            color: #0f172a !important;
+        }
+        .first-login-modal-card .input-control:focus {
+            background: #ffffff !important;
+            border-color: #f59e0b !important;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2) !important;
         }
     </style>
     <script>
@@ -1491,6 +1580,181 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST['action']) || $_POST[
             if (np) np.type = this.checked ? 'text' : 'password';
             if (cp) cp.type = this.checked ? 'text' : 'password';
         });
+
+        function checkFirstLoginPasswordStrength(showError) {
+            var pwdInput = document.getElementById('firstLoginNewPwd');
+            var wrap = document.getElementById('firstLoginStrengthWrap');
+            var label = document.getElementById('firstLoginStrengthLabel');
+            var err = document.getElementById('firstLoginPwdError');
+            var bars = [
+                document.getElementById('firstLoginBar1'),
+                document.getElementById('firstLoginBar2'),
+                document.getElementById('firstLoginBar3'),
+                document.getElementById('firstLoginBar4')
+            ];
+
+            if (!pwdInput) return false;
+            var pwd = pwdInput.value;
+
+            if (!pwd || pwd.length === 0) {
+                if (wrap) wrap.style.display = 'none';
+                if (err) { err.textContent = ''; err.style.display = 'none'; }
+                pwdInput.style.borderColor = '#cbd5e1';
+                bars.forEach(function(b) { if (b) b.style.backgroundColor = '#e2e8f0'; });
+                if (label) label.textContent = '';
+                if (showError && err) {
+                    err.textContent = 'Password field is required.';
+                    err.style.display = 'block';
+                    pwdInput.style.borderColor = '#ef4444';
+                }
+                return false;
+            }
+
+            if (wrap) wrap.style.display = 'block';
+
+            var hasUpper = /[A-Z]/.test(pwd);
+            var hasLower = /[a-z]/.test(pwd);
+            var hasNum = /[0-9]/.test(pwd);
+            var hasSpec = /[!@#$%^&*(),.?":{}|<>_\-\=\+\/\[\]\\]/.test(pwd);
+            var isLen = pwd.length >= 8;
+
+            var hasRepeated = false;
+            for (var i = 0; i < pwd.length - 2; i++) {
+                if (pwd[i] === pwd[i+1] && pwd[i] === pwd[i+2]) {
+                    hasRepeated = true;
+                    break;
+                }
+            }
+
+            var weakList = ['password', '12345678', '123456789', 'admin123', 'qwerty123', 'pass1234', 'welcome1', 'superadmin'];
+            var isCommonWeak = weakList.indexOf(pwd.toLowerCase()) !== -1;
+
+            var score = 0;
+            if (isLen) score++;
+            if (hasUpper && hasLower) score++;
+            if (hasNum) score++;
+            if (hasSpec) score++;
+
+            var color = "#ef4444";
+            var levelText = "Weak password";
+            switch (score) {
+                case 0:
+                case 1:
+                    levelText = "Weak password";
+                    color = "#ef4444";
+                    break;
+                case 2:
+                    levelText = "Fair password";
+                    color = "#f97316";
+                    break;
+                case 3:
+                    levelText = "Medium password";
+                    color = "#f59e0b";
+                    break;
+                case 4:
+                    levelText = "Strong password";
+                    color = "#10b981";
+                    break;
+            }
+
+            bars.forEach(function(b, idx) {
+                if (b) {
+                    b.style.backgroundColor = (idx < score) ? color : '#e2e8f0';
+                }
+            });
+
+            if (label) {
+                label.textContent = levelText;
+                label.style.color = color;
+            }
+
+            // Validation rules - reject weak passwords
+            var validationError = '';
+            if (pwd === '@Abcde12345') {
+                validationError = 'New password cannot be the default password. Please choose a unique password.';
+            } else if (!isLen) {
+                validationError = 'Password is too weak. Must be at least 8 characters long.';
+            } else if (pwd.length > 25) {
+                validationError = 'Password should not exceed 25 characters.';
+            } else if (!hasUpper || !hasLower || !hasNum || !hasSpec) {
+                validationError = 'Password is too weak. Must include uppercase, lowercase, number, and a special character.';
+            } else if (hasRepeated) {
+                validationError = 'Password is too weak. Cannot contain 3 consecutive repeated characters.';
+            } else if (isCommonWeak) {
+                validationError = 'Password is too weak. Please choose a stronger password.';
+            } else if (score < 4) {
+                validationError = 'Password is too weak. Please choose a stronger password.';
+            }
+
+            if (validationError) {
+                if (showError && err) {
+                    err.textContent = validationError;
+                    err.style.display = 'block';
+                }
+                pwdInput.style.borderColor = '#ef4444';
+                return false;
+            } else {
+                if (err) {
+                    err.textContent = '';
+                    err.style.display = 'none';
+                }
+                pwdInput.style.borderColor = '#10b981';
+                return true;
+            }
+        }
+
+        function checkFirstLoginConfirmPassword(showError) {
+            var np = document.getElementById('firstLoginNewPwd');
+            var cp = document.getElementById('firstLoginConfirmPwd');
+            var err = document.getElementById('firstLoginConfirmError');
+            if (!cp) return true;
+            var cpVal = cp.value;
+            var npVal = np ? np.value : '';
+
+            if (!cpVal) {
+                if (showError && err) {
+                    err.textContent = 'Please confirm your new password.';
+                    err.style.display = 'block';
+                    cp.style.borderColor = '#ef4444';
+                }
+                return false;
+            }
+
+            if (npVal !== cpVal) {
+                if (err) {
+                    err.textContent = 'Passwords do not match.';
+                    err.style.display = 'block';
+                }
+                cp.style.borderColor = '#ef4444';
+                return false;
+            }
+
+            if (err) {
+                err.textContent = '';
+                err.style.display = 'none';
+            }
+            cp.style.borderColor = '#10b981';
+            return true;
+        }
+
+        function validateFirstLoginPwdForm(e) {
+            var validPwd = checkFirstLoginPasswordStrength(true);
+            var validCp = checkFirstLoginConfirmPassword(true);
+
+            if (!validPwd) {
+                if (e) e.preventDefault();
+                document.getElementById('firstLoginNewPwd')?.focus();
+                return false;
+            }
+
+            if (!validCp) {
+                if (e) e.preventDefault();
+                document.getElementById('firstLoginConfirmPwd')?.focus();
+                return false;
+            }
+
+            return true;
+        }
     </script>
     <?php endif; ?>
 

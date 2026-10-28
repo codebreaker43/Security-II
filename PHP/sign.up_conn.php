@@ -71,29 +71,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $raw_ans3 = isset($_POST["security_answer3"]) ? strtolower(trim($_POST["security_answer3"])) : '';
     $security_answer3 = mysqli_real_escape_string($conn, password_hash($raw_ans3, PASSWORD_DEFAULT));
 
-    // Validate allowed email domains (Gmail or University emails only)
+    // Validate email format
     $email_clean = strtolower(trim($email));
-    $email_domain = substr(strrchr($email_clean, "@"), 1);
-    $is_gmail = ($email_domain === 'gmail.com');
-    $is_university = (preg_match('/^[a-z0-9.-]+\.edu\.ph$/i', $email_domain) || preg_match('/^[a-z0-9.-]+\.edu$/i', $email_domain));
-    if (!$is_gmail && !$is_university) {
-        echo "<script>alert('Only Gmail (@gmail.com) and university email (@...edu.ph / @...edu) are allowed!'); location.href='registration.php';</script>";
+    if (!filter_var($email_clean, FILTER_VALIDATE_EMAIL)) {
+        echo "<script>alert('Please enter a valid email address!'); location.href='registration.php';</script>";
         exit();
-    } elseif ($is_gmail && !empty($firstname) && !empty($lastname)) {
-        $local = strtolower(substr($email_clean, 0, strpos($email_clean, "@")));
-        $clean_fn = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $firstname));
-        $clean_ln = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $lastname));
-        $dot_fn = strtolower(preg_replace('/\s+/', '.', trim(preg_replace('/[^a-zA-Z0-9\s]/', '', $firstname))));
-        $dot_ln = strtolower(preg_replace('/\s+/', '.', trim(preg_replace('/[^a-zA-Z0-9\s]/', '', $lastname))));
-
-        $p1 = '/^' . preg_quote($clean_fn, '/') . '\.' . preg_quote($clean_ln, '/') . '[0-9]*$/';
-        $p2 = '/^' . preg_quote($dot_fn, '/') . '\.' . preg_quote($dot_ln, '/') . '[0-9]*$/';
-
-        if (!preg_match($p1, $local) && !preg_match($p2, $local)) {
-            $example = $clean_fn . '.' . $clean_ln . '@gmail.com';
-            echo "<script>alert('Gmail address must follow the standard: firstname.lastname@gmail.com (e.g., $example)'); location.href='registration.php';</script>";
-            exit();
-        }
     }
 
     // Check for existing username, email, and password

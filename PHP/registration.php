@@ -195,27 +195,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors[] = "Email address is required.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors[] = "Please enter a valid email address.";
-    } else {
-        $email_domain = strtolower(substr(strrchr($email, "@"), 1));
-        $is_gmail = ($email_domain === 'gmail.com');
-        $is_university = (preg_match('/^[a-z0-9.-]+\.edu\.ph$/i', $email_domain) || preg_match('/^[a-z0-9.-]+\.edu$/i', $email_domain));
-        if (!$is_gmail && !$is_university) {
-            $errors[] = "Only Gmail (@gmail.com) and university email (@...edu.ph / @...edu) are allowed.";
-        } elseif ($is_gmail && !empty($firstname) && !empty($lastname)) {
-            $local = strtolower(substr($email, 0, strpos($email, "@")));
-            $clean_fn = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $firstname));
-            $clean_ln = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $lastname));
-            $dot_fn = strtolower(preg_replace('/\s+/', '.', trim(preg_replace('/[^a-zA-Z0-9\s]/', '', $firstname))));
-            $dot_ln = strtolower(preg_replace('/\s+/', '.', trim(preg_replace('/[^a-zA-Z0-9\s]/', '', $lastname))));
-
-            $p1 = '/^' . preg_quote($clean_fn, '/') . '\.' . preg_quote($clean_ln, '/') . '[0-9]*$/';
-            $p2 = '/^' . preg_quote($dot_fn, '/') . '\.' . preg_quote($dot_ln, '/') . '[0-9]*$/';
-
-            if (!preg_match($p1, $local) && !preg_match($p2, $local)) {
-                $example = $clean_fn . '.' . $clean_ln . '@gmail.com';
-                $errors[] = "Gmail address must follow the standard: firstname.lastname@gmail.com (e.g., $example).";
-            }
-        }
     }
 
     if (empty($username)) {
@@ -353,21 +332,21 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --accent-gold: #fbbf24;
-            --accent-gold-hover: #f59e0b;
-            --accent-gold-glow: rgba(245, 158, 11, 0.35);
+            --accent-gold: #d97706;
+            --accent-gold-hover: #b45309;
+            --accent-gold-glow: rgba(217, 119, 6, 0.25);
             --accent-red: #ef4444;
             --accent-orange: #f97316;
             --accent-orange-hover: #ea580c;
-            --accent-orange-glow: rgba(234, 88, 12, 0.35);
+            --accent-orange-glow: rgba(234, 88, 12, 0.25);
             --dark-bg: #0b1120;
-            --card-bg: linear-gradient(145deg, rgba(15, 23, 42, 0.94) 0%, rgba(24, 34, 53, 0.92) 100%);
-            --input-bg: rgba(8, 12, 22, 0.75);
-            --input-border: rgba(255, 255, 255, 0.25);
-            --input-border-focus: #fbbf24;
-            --text-main: #ffffff;
-            --text-muted: #cbd5e1;
-            --text-label: #fbbf24;
+            --card-bg: rgba(255, 255, 255, 0.96);
+            --input-bg: #f8fafc;
+            --input-border: #cbd5e1;
+            --input-border-focus: #f59e0b;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --text-label: #1e293b;
             --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             --font-heading: 'Outfit', sans-serif;
         }
@@ -385,7 +364,7 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
         body {
             font-family: var(--font-main);
             background-color: var(--dark-bg);
-            color: var(--text-main);
+            color: #ffffff;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -522,12 +501,12 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             background: var(--card-bg);
             backdrop-filter: blur(25px) saturate(180%);
             -webkit-backdrop-filter: blur(25px) saturate(180%);
-            border: 1px solid rgba(245, 158, 11, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.85);
             border-radius: 16px;
             padding: 1.5rem 2.25rem;
             width: 100%;
             max-width: 900px;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55), 0 0 35px rgba(245, 158, 11, 0.12);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.28), 0 0 35px rgba(245, 158, 11, 0.12);
             position: relative;
         }
 
@@ -554,21 +533,21 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             height: 30px;
             background: linear-gradient(180deg, #f59e0b 0%, #ef4444 100%);
             border-radius: 4px;
-            box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
         }
 
         .form-title {
             font-family: var(--font-heading);
             font-size: 1.65rem;
             font-weight: 800;
-            color: #ffffff;
+            color: #0f172a;
             letter-spacing: 0.5px;
             line-height: 1.1;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+            text-shadow: none;
         }
 
         .form-subtitle {
-            color: #cbd5e1;
+            color: #64748b;
             font-size: 0.88rem;
             margin-left: calc(5px + 0.85rem);
             font-weight: 500;
@@ -588,7 +567,7 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             height: 8px;
             border-radius: 50%;
             background: #f59e0b;
-            box-shadow: 0 0 8px #f59e0b;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
             flex-shrink: 0;
         }
 
@@ -597,8 +576,8 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             font-size: 0.88rem;
             font-weight: 800;
             letter-spacing: 1.5px;
-            color: #fbbf24;
-            text-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+            color: #d97706;
+            text-shadow: none;
             text-transform: uppercase;
             white-space: nowrap;
         }
@@ -606,7 +585,7 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
         .section-line {
             flex: 1;
             height: 1px;
-            background: repeating-linear-gradient(to right, rgba(245, 158, 11, 0.4) 0, rgba(245, 158, 11, 0.4) 4px, transparent 4px, transparent 8px);
+            background: repeating-linear-gradient(to right, rgba(217, 119, 6, 0.35) 0, rgba(217, 119, 6, 0.35) 4px, transparent 4px, transparent 8px);
         }
 
         /* Input Grid */
@@ -636,11 +615,11 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             gap: 0.35rem;
             font-size: 0.80rem;
             font-weight: 700;
-            color: #fbbf24;
+            color: #1e293b;
             text-transform: uppercase;
             letter-spacing: 0.6px;
             margin-bottom: 0.35rem;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            text-shadow: none;
         }
 
         .req-star {
@@ -651,7 +630,7 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
         .label-hint {
             font-size: 0.75rem;
             font-weight: 500;
-            color: #cbd5e1;
+            color: #64748b;
             text-transform: none;
             letter-spacing: normal;
         }
@@ -661,20 +640,18 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
         select.input-control {
             width: 100%;
             height: 42px;
-            background: rgba(8, 12, 22, 0.75);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1.5px solid rgba(255, 255, 255, 0.25);
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
             border-radius: 8px;
             padding: 0 0.95rem;
-            color: #ffffff !important;
+            color: #0f172a !important;
             font-family: var(--font-main);
             font-size: 0.93rem;
             font-weight: 600;
             transition: all 0.2s ease;
             box-sizing: border-box;
             outline: none;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
         }
 
         .input-control::placeholder {
@@ -684,10 +661,10 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
 
         .input-control:focus,
         select.input-control:focus {
-            border-color: #fbbf24 !important;
-            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35) !important;
-            background: rgba(15, 23, 42, 0.95) !important;
-            color: #ffffff !important;
+            border-color: #f59e0b !important;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2) !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
         }
 
         /* Autofill High Contrast Fix */
@@ -696,21 +673,21 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
         .input-control:-webkit-autofill:focus, 
         .input-control:-webkit-autofill:active,
         select.input-control:-webkit-autofill {
-            -webkit-box-shadow: 0 0 0 1000px #090d16 inset !important;
-            -webkit-text-fill-color: #ffffff !important;
-            caret-color: #ffffff !important;
+            -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+            -webkit-text-fill-color: #0f172a !important;
+            caret-color: #0f172a !important;
             transition: background-color 5000s ease-in-out 0s;
         }
 
         /* Readonly ID NO & Age */
         .input-idno {
-            color: #38bdf8 !important;
+            color: #0284c7 !important;
             font-weight: 800 !important;
             font-size: 0.95rem !important;
             letter-spacing: 1px;
-            background: rgba(8, 12, 22, 0.90) !important;
+            background: #f0f9ff !important;
             cursor: not-allowed;
-            border-color: rgba(56, 189, 248, 0.45) !important;
+            border-color: #7dd3fc !important;
         }
 
         .age-input-wrapper {
@@ -721,11 +698,11 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
 
         .age-input-wrapper .input-control {
             padding-right: 3.5rem;
-            background: rgba(8, 12, 22, 0.90) !important;
+            background: #f8fafc !important;
             cursor: not-allowed;
-            color: #ffffff !important;
+            color: #0f172a !important;
             font-weight: 600;
-            border-color: rgba(255, 255, 255, 0.2) !important;
+            border-color: #cbd5e1 !important;
         }
 
         .age-unit-suffix {
@@ -733,7 +710,7 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             right: 1rem;
             font-size: 0.82rem;
             font-weight: 800;
-            color: #cbd5e1;
+            color: #64748b;
             letter-spacing: 1px;
             pointer-events: none;
         }
@@ -743,7 +720,7 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             appearance: none;
             -webkit-appearance: none;
             -moz-appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cbd5e1' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
             background-repeat: no-repeat;
             background-position: right 1rem center;
             background-size: 15px;
@@ -752,21 +729,20 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
         }
 
         select.input-control option {
-            background-color: #0f172a !important;
-            color: #ffffff !important;
+            background-color: #ffffff !important;
+            color: #0f172a !important;
             font-weight: 600;
             padding: 8px 12px;
         }
 
         /* Date input icon */
         input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(1);
             cursor: pointer;
         }
 
         /* Under-field Real-Time Error Message */
         .error-msg {
-            color: #f87171;
+            color: #dc2626;
             font-size: 0.76rem;
             font-weight: 600;
             display: none;
@@ -782,8 +758,8 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
 
         .input-error-highlight {
             border-color: #ef4444 !important;
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25) !important;
-            background: rgba(239, 68, 68, 0.15) !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+            background: #fef2f2 !important;
         }
 
         /* Step Action Buttons */
@@ -824,9 +800,9 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
         .btn-step-back {
             width: 120px;
             height: 42px;
-            background: rgba(255, 255, 255, 0.12);
-            color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #cbd5e1;
             border-radius: 8px;
             font-family: var(--font-main);
             font-size: 0.9rem;
@@ -837,24 +813,25 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             justify-content: center;
             gap: 0.4rem;
             transition: all 0.2s ease;
-            backdrop-filter: blur(10px);
         }
 
         .btn-step-back:hover {
-            background: rgba(255, 255, 255, 0.22);
-            color: #fbbf24;
-            border-color: #fbbf24;
+            background: #e2e8f0;
+            color: #0f172a;
+            border-color: #94a3b8;
         }
 
         .auth-footer-link {
             text-align: center;
-            margin-top: 0.75rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
             font-size: 0.85rem;
-            color: #cbd5e1;
+            color: #64748b;
         }
 
         .auth-footer-link a {
-            color: #fbbf24;
+            color: #d97706;
             text-decoration: none;
             font-weight: 700;
             margin-left: 0.3rem;
@@ -862,7 +839,7 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
         }
 
         .auth-footer-link a:hover {
-            color: #fde047;
+            color: #ea580c;
             text-decoration: underline;
         }
 
@@ -871,7 +848,7 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
             border-top: 1px solid rgba(255, 255, 255, 0.15);
             padding: 1.5rem;
             text-align: center;
-            color: rgba(255, 255, 255, 0.7);
+            color: #cbd5e1;
             font-size: 0.88rem;
             margin-top: auto;
             background: rgba(15, 23, 42, 0.35);
@@ -879,13 +856,13 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
         }
 
         footer a {
-            color: #fbbf24;
+            color: #cbd5e1;
             text-decoration: none;
             transition: color 0.2s ease;
         }
 
         footer a:hover {
-            color: #fde047;
+            color: #f59e0b;
         }
 
         @media (max-width: 768px) {
@@ -1211,7 +1188,7 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
                                 Email Address <span class="req-star">*</span>
                             </label>
                             <input type="email" name="email" id="email" class="input-control"
-                                placeholder="firstname.lastname@gmail.com or name@csucc.edu.ph"
+                                placeholder="Enter your email address"
                                 value="<?php echo isset($_SESSION['form_data']['email']) ? htmlspecialchars($_SESSION['form_data']['email']) : ''; ?>">
                             <small class="error-msg" id="email_error"></small>
                         </div>
@@ -1243,10 +1220,10 @@ if (isset($_SESSION['form_data']['idno']) && !empty($_SESSION['form_data']['idno
                             <!-- Password Strength Bar -->
                             <div class="strength-meter-wrap" style="margin-top: 6px; margin-bottom: 6px;">
                                 <div class="strength-bars" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; height: 5px;">
-                                    <div class="strength-bar" id="bar1" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
-                                    <div class="strength-bar" id="bar2" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
-                                    <div class="strength-bar" id="bar3" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
-                                    <div class="strength-bar" id="bar4" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
+                                    <div class="strength-bar" id="bar1" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
+                                    <div class="strength-bar" id="bar2" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
+                                    <div class="strength-bar" id="bar3" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
+                                    <div class="strength-bar" id="bar4" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
                                 </div>
                             </div>
                             <div id="pswrd" style="display: none;"></div>

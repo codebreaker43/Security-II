@@ -72,28 +72,39 @@ function enforce_profile_completion($conn, $is_api = false) {
     $uid_safe = mysqli_real_escape_string($conn, $user_id);
 
     // Verify account status directly from database (invalidate session if inactive/blocked)
+    $is_account_inactive = false;
     $st_res = mysqli_query($conn, "SELECT status FROM user WHERE idno = '$uid_safe' LIMIT 1");
     if ($st_res && ($st_row = mysqli_fetch_assoc($st_res))) {
         if ($st_row['status'] !== 'active') {
-            @mysqli_query($conn, "UPDATE user SET is_online = 0 WHERE idno = '$uid_safe'");
-            session_unset();
-            session_destroy();
-            if ($is_api) {
-                header('Content-Type: application/json');
-                http_response_code(403);
-                echo json_encode([
-                    'error' => 'Account inactive',
-                    'message' => 'Your account is inactive. Only one Super Admin can be active at a time.',
-                    'redirect' => '../login.php'
-                ]);
-                exit();
+            $is_account_inactive = true;
+        } else {
+            // User is active: synchronize admins table to prevent desync deadlock
+            if (isset($_SESSION['role']) && $_SESSION['role'] === 'superadmin') {
+                @mysqli_query($conn, "UPDATE `admins` SET status = 'Active' WHERE user_idno = '$uid_safe'");
+                @mysqli_query($conn, "UPDATE `admins` SET status = 'Inactive' WHERE user_idno != '$uid_safe'");
             }
-            $script_path = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
-            $in_subdir = (strpos($script_path, '/admin/') !== false || strpos($script_path, '/superadmin/') !== false);
-            $base_path = $in_subdir ? '../' : './';
-            header("Location: " . $base_path . "login.php");
+        }
+    }
+
+    if ($is_account_inactive) {
+        @mysqli_query($conn, "UPDATE user SET is_online = 0 WHERE idno = '$uid_safe'");
+        session_unset();
+        session_destroy();
+        if ($is_api) {
+            header('Content-Type: application/json');
+            http_response_code(403);
+            echo json_encode([
+                'error' => 'Account inactive',
+                'message' => 'Your account is inactive. Only one Super Admin can be active at a time.',
+                'redirect' => '../login.php'
+            ]);
             exit();
         }
+        $script_path = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+        $in_subdir = (strpos($script_path, '/admin/') !== false || strpos($script_path, '/superadmin/') !== false);
+        $base_path = $in_subdir ? '../' : './';
+        header("Location: " . $base_path . "login.php");
+        exit();
     }
 
     $script_path = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
@@ -102,7 +113,16 @@ function enforce_profile_completion($conn, $is_api = false) {
         return;
     }
 
-    // Check completeness directly from database
+    // If account is already marked as completed (Existing Account), allow access immediately
+    $p_chk = mysqli_query($conn, "SELECT profile_completed FROM user WHERE idno = '$uid_safe' LIMIT 1");
+    if ($p_chk && ($p_row = mysqli_fetch_assoc($p_chk))) {
+        if (intval($p_row['profile_completed']) === 1) {
+            $_SESSION['profile_completed'] = 1;
+            return; // Existing completed account - do not send to complete_profile.php
+        }
+    }
+
+    // Check completeness directly from database for new accounts
     $is_complete = check_user_personal_info_complete($conn, $user_id);
 
     if ($is_complete) {
@@ -111,7 +131,7 @@ function enforce_profile_completion($conn, $is_api = false) {
         return; // Profile is completely filled - allow access
     }
 
-    // Profile is INCOMPLETE - block access to all other features
+    // Profile is truly INCOMPLETE (New account that hasn't completed setup) - block access
     $_SESSION['profile_completed'] = 0;
     @mysqli_query($conn, "UPDATE user SET profile_completed = 0 WHERE idno = '$uid_safe'");
 

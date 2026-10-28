@@ -45,11 +45,7 @@ function isValidDate(dateString) {
 
 function isValidEmail(email) {
     var emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailRegex.test(email)) return false;
-    var domain = (email.trim().toLowerCase().split('@')[1] || '');
-    var isGmail = (domain === 'gmail.com');
-    var isUniversity = /(^|\.)[a-z0-9-]+\.edu\.ph$/.test(domain) || /(^|\.)[a-z0-9-]+\.edu$/.test(domain);
-    return isGmail || isUniversity;
+    return emailRegex.test(email);
 }
 
 function calculateAge() {
@@ -92,7 +88,7 @@ function strongpassword(password) {
     if (!password || password.length === 0) {
         if (pswrdEl) pswrdEl.innerHTML = "";
         bars.forEach(function(b) {
-            if (b) b.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+            if (b) b.style.backgroundColor = "#e2e8f0";
         });
         if (strengthLabel) {
             strengthLabel.textContent = "";
@@ -137,7 +133,7 @@ function strongpassword(password) {
             if (idx < alt) {
                 b.style.backgroundColor = color;
             } else {
-                b.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+                b.style.backgroundColor = "#e2e8f0";
             }
         }
     });
@@ -757,43 +753,6 @@ function checkEmail(showEmpty) {
     if (!val.includes('@')) {
         setFieldError("email", "Email must contain an '@' symbol.");
         return false;
-    }
-
-    var parts = val.toLowerCase().split('@');
-    if (parts.length === 2 && parts[1]) {
-        var domain = parts[1];
-        var isGmail = (domain === 'gmail.com');
-        var isUniversity = /(^|\.)[a-z0-9-]+\.edu\.ph$/.test(domain) || /(^|\.)[a-z0-9-]+\.edu$/.test(domain);
-
-        if (!isGmail && !isUniversity) {
-            setFieldError("email", "Only Gmail (@gmail.com) and university email (@...edu.ph / @...edu) are allowed.");
-            return false;
-        }
-
-        if (isGmail) {
-            var fnEl = document.getElementById("firstname");
-            var lnEl = document.getElementById("lastname");
-            var fnVal = fnEl ? fnEl.value.trim() : "";
-            var lnVal = lnEl ? lnEl.value.trim() : "";
-
-            if (fnVal && lnVal) {
-                var local = parts[0];
-                var cleanFn = fnVal.toLowerCase().replace(/[^a-z0-9]/g, '');
-                var cleanLn = lnVal.toLowerCase().replace(/[^a-z0-9]/g, '');
-                var dotFn = fnVal.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '.');
-                var dotLn = lnVal.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '.');
-
-                var escapeRegex = function(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); };
-                var r1 = new RegExp('^' + escapeRegex(cleanFn) + '\\.' + escapeRegex(cleanLn) + '[0-9]*$');
-                var r2 = new RegExp('^' + escapeRegex(dotFn) + '\\.' + escapeRegex(dotLn) + '[0-9]*$');
-
-                if (!r1.test(local) && !r2.test(local)) {
-                    var example = cleanFn + '.' + cleanLn + '@gmail.com';
-                    setFieldError("email", "Gmail address must follow the standard: firstname.lastname@gmail.com (e.g., " + example + ").");
-                    return false;
-                }
-            }
-        }
     }
 
     if (!isValidEmail(val)) {

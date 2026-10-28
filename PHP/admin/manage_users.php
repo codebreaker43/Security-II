@@ -16,6 +16,9 @@ $priv_query = mysqli_query($conn, "SELECT privileges FROM user WHERE idno = '$cu
 $priv_data = mysqli_fetch_assoc($priv_query);
 $privileges_json = $priv_data['privileges'] ?? '[]';
 $privileges = json_decode($privileges_json, true) ?? [];
+if (empty($privileges)) {
+    $privileges = ['view_users', 'create_users', 'approve_users'];
+}
 
 $can_delete_users = in_array('delete_users', $privileges);
 $can_view_users = in_array('view_users', $privileges);
@@ -129,7 +132,8 @@ $can_approve = in_array('approve_users', $privileges);
             letter-spacing: 0.5px;
         }
 
-        .filter-group select {
+        .filter-group select,
+        .filter-group input {
             padding: 0.7rem 1rem;
             border-radius: 10px;
             border: 1.5px solid #cbd5e1;
@@ -137,12 +141,29 @@ $can_approve = in_array('approve_users', $privileges);
             color: #0f172a;
             font-size: 0.86rem;
             font-weight: 600;
-            cursor: pointer;
             outline: none;
             transition: all 0.3s ease;
         }
 
-        .filter-group select:focus {
+        .filter-group select {
+            cursor: pointer;
+        }
+
+        .filter-group input {
+            width: 140px;
+            font-family: monospace;
+            font-weight: 700;
+            color: #0284c7;
+        }
+
+        .filter-group input::placeholder {
+            color: #94a3b8;
+            font-family: inherit;
+            font-weight: 500;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
             border-color: #f59e0b;
             box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
         }
@@ -467,9 +488,75 @@ $can_approve = in_array('approve_users', $privileges);
             margin-top: 0.25rem;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        /* Pagination Styling */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 1.5rem;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .pagination .btn-pag,
+        .pagination span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2.4rem;
+            height: 2.4rem;
+            padding: 0 0.75rem;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            color: #0f172a;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .pagination .btn-pag:hover:not(:disabled):not(.active) {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #92400e;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+        }
+
+        .pagination .btn-pag.active {
+            background: linear-gradient(135deg, #d97706, #b45309) !important;
+            border-color: #d97706 !important;
+            color: #fff !important;
+            box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35);
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .pagination span.dots {
+            border-color: transparent;
+            background: transparent;
+            color: #94a3b8;
+            cursor: default;
+        }
+
+        .pagination .btn-pag.disabled,
+        .pagination .btn-pag:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .pagination-info {
+            text-align: center;
+            font-size: 0.82rem;
+            color: #ffffff;
+            font-weight: 600;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+            margin-top: 0.75rem;
         }
     </style>
 </head>
@@ -509,6 +596,11 @@ $can_approve = in_array('approve_users', $privileges);
             </div>
             <div class="filter-controls">
                 <div class="filter-group">
+                    <label for="idFilter">ID Number:</label>
+                    <input type="text" id="idFilter" list="idList" placeholder="Filter ID..." oninput="filterUsers()">
+                    <datalist id="idList"></datalist>
+                </div>
+                <div class="filter-group">
                     <label for="statusFilter">Status:</label>
                     <select id="statusFilter" onchange="filterUsers()">
                         <option value="all">All Statuses</option>
@@ -536,8 +628,11 @@ $can_approve = in_array('approve_users', $privileges);
                 <tbody id="usersTableBody">
                     <tr><td colspan="6" style="text-align: center; color: #94a3b8;">Loading user accounts...</td></tr>
                 </tbody>
-            </table>
         </div>
+
+        <!-- Users Pagination -->
+        <div id="usersPagination" class="pagination"></div>
+        <div id="usersPaginationInfo" class="pagination-info"></div>
     </div>
 
     <!-- Create User Modal (4 fields: ID Number, Username, Role (User), Default Password) -->
@@ -719,7 +814,7 @@ $can_approve = in_array('approve_users', $privileges);
 
                 <div style="display: flex; justify-content: center; gap: 0.85rem; margin-top: 1.5rem;">
                     <button type="button" class="modal-btn modal-btn-cancel" onclick="closeModal('verificationModal')">Cancel</button>
-                    <button type="submit" class="btn-create-user" style="padding: 0.65rem 1.6rem;">Confirm &amp; Execute</button>
+                    <button type="submit" class="btn-create-user" id="verifSubmitBtn" style="padding: 0.65rem 1.6rem;">Confirm &amp; Execute</button>
                 </div>
             </form>
         </div>
@@ -761,9 +856,14 @@ $can_approve = in_array('approve_users', $privileges);
     </div>
 
     <script>
+        const CURRENT_USER_IDNO = '<?php echo $_SESSION["user_id"]; ?>';
+        const CURRENT_USER_USERNAME = '<?php echo addslashes($_SESSION["username"] ?? ""); ?>';
         const canApprove = <?php echo $can_approve ? 'true' : 'false'; ?>;
         let allUsers = [];
         let pendingActionPayload = null;
+        let currentUserPage = 1;
+        const usersPerPage = 10;
+        let currentFilteredUsers = [];
 
         document.addEventListener('DOMContentLoaded', () => {
             loadUsers();
@@ -800,7 +900,8 @@ $can_approve = in_array('approve_users', $privileges);
                 .then(data => {
                     if (data.success) {
                         allUsers = data.users || [];
-                        renderUsers(allUsers);
+                        updateIdFilterOptions(allUsers);
+                        filterUsers();
                     } else {
                         alert(data.error || 'Failed to load users');
                     }
@@ -808,36 +909,64 @@ $can_approve = in_array('approve_users', $privileges);
                 .catch(err => console.error(err));
         }
 
-        function renderUsers(users) {
+        function updateIdFilterOptions(users) {
+            const dl = document.getElementById('idList');
+            if (!dl) return;
+            const ids = [...new Set(users.map(u => u.idno).filter(Boolean))].sort();
+            dl.innerHTML = ids.map(id => `<option value="${id}">`).join('');
+        }
+
+        function renderUsers(users, resetPage = false) {
+            if (resetPage) currentUserPage = 1;
+            currentFilteredUsers = users || [];
+
             const tbody = document.getElementById('usersTableBody');
-            if (!users || users.length === 0) {
+            if (!currentFilteredUsers || currentFilteredUsers.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 2rem;">No user accounts found.</td></tr>';
+                renderUsersPagination(0, 0);
                 return;
             }
 
-            tbody.innerHTML = users.map(u => {
+            const totalPages = Math.ceil(currentFilteredUsers.length / usersPerPage) || 1;
+            if (currentUserPage > totalPages) currentUserPage = totalPages;
+            if (currentUserPage < 1) currentUserPage = 1;
+
+            const start = (currentUserPage - 1) * usersPerPage;
+            const end = Math.min(start + usersPerPage, currentFilteredUsers.length);
+            const pagedUsers = currentFilteredUsers.slice(start, end);
+
+            tbody.innerHTML = pagedUsers.map(u => {
+                const isSelf = (u.idno === CURRENT_USER_IDNO) || (CURRENT_USER_USERNAME && u.username === CURRENT_USER_USERNAME);
                 const fullName = `${u.firstname || ''} ${u.lastname || ''}`.trim() || u.username;
-                const statusBadge = `<span class="badge badge-status-${u.status}">${u.status}</span>`;
+                let statusBadge = `<span class="badge badge-status-${u.status}">${u.status.toUpperCase()}</span>`;
+                if (u.status === 'pending_deletion') {
+                    statusBadge = `<span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.45); font-weight: 700;">PENDING DELETION</span>`;
+                }
 
                 let actionOptions = `
                     <option value="" disabled selected>Actions</option>
                     <option value="view">View</option>
-                    <option value="edit">Edit</option>
                 `;
 
-                if (u.status === 'active') {
-                    actionOptions += `<option value="block">Block</option>`;
-                } else if (u.status === 'blocked') {
-                    actionOptions += `<option value="unblock">Unblock</option>`;
+                if (!isSelf) {
+                    if (u.status === 'pending_deletion') {
+                        // Already pending deletion with Super Admin
+                    } else {
+                        actionOptions += `<option value="edit">Edit</option>`;
+                        if (u.status === 'active') {
+                            actionOptions += `<option value="block">Block</option>`;
+                        } else if (u.status === 'blocked') {
+                            actionOptions += `<option value="unblock">Unblock</option>`;
+                        }
+                        actionOptions += `<option value="delete" class="opt-delete">Request Delete</option>`;
+                    }
                 }
-
-                actionOptions += `<option value="delete" class="opt-delete">Delete</option>`;
 
                 return `
                     <tr>
-                        <td style="font-family: monospace; font-weight: 700; color: #cbd5e1;">${u.idno || 'N/A'}</td>
-                        <td><strong>${escapeHtml(fullName)}</strong></td>
-                        <td style="color: #60a5fa;">${escapeHtml(u.username)}</td>
+                        <td style="font-family: monospace; font-weight: 700; color: #0284c7; letter-spacing: 0.5px;">${u.idno || 'N/A'}</td>
+                        <td style="font-weight: 600; color: #0f172a;">${escapeHtml(fullName)}</td>
+                        <td style="color: #b45309; font-weight: 700;">${escapeHtml(u.username)}</td>
                         <td><span class="badge badge-role-user">USER</span></td>
                         <td>${statusBadge}</td>
                         <td>
@@ -848,6 +977,67 @@ $can_approve = in_array('approve_users', $privileges);
                     </tr>
                 `;
             }).join('');
+
+            renderUsersPagination(totalPages, currentFilteredUsers.length, start, end);
+        }
+
+        function renderUsersPagination(totalPages, totalItems, start = 0, end = 0) {
+            const pagContainer = document.getElementById('usersPagination');
+            const infoContainer = document.getElementById('usersPaginationInfo');
+            if (!pagContainer || !infoContainer) return;
+
+            if (totalPages <= 1) {
+                pagContainer.innerHTML = '';
+                infoContainer.innerHTML = totalItems > 0 ? `Showing ${totalItems} user${totalItems > 1 ? 's' : ''}` : '';
+                return;
+            }
+
+            let html = '';
+            // Prev button
+            if (currentUserPage > 1) {
+                html += `<button type="button" class="btn-pag" onclick="changeUserPage(${currentUserPage - 1})">&laquo; Prev</button>`;
+            } else {
+                html += `<button type="button" class="btn-pag disabled" disabled>&laquo; Prev</button>`;
+            }
+
+            // Page numbers
+            const windowSize = 2;
+            let pages = [];
+            for (let p = 1; p <= totalPages; p++) {
+                if (p === 1 || p === totalPages || (p >= currentUserPage - windowSize && p <= currentUserPage + windowSize)) {
+                    pages.push(p);
+                }
+            }
+
+            let lastP = null;
+            pages.forEach(p => {
+                if (lastP !== null && p - lastP > 1) {
+                    html += `<span class="dots">&hellip;</span>`;
+                }
+                if (p === currentUserPage) {
+                    html += `<button type="button" class="btn-pag active">${p}</button>`;
+                } else {
+                    html += `<button type="button" class="btn-pag" onclick="changeUserPage(${p})">${p}</button>`;
+                }
+                lastP = p;
+            });
+
+            // Next button
+            if (currentUserPage < totalPages) {
+                html += `<button type="button" class="btn-pag" onclick="changeUserPage(${currentUserPage + 1})">Next &raquo;</button>`;
+            } else {
+                html += `<button type="button" class="btn-pag disabled" disabled>Next &raquo;</button>`;
+            }
+
+            pagContainer.innerHTML = html;
+            infoContainer.innerHTML = `Showing ${start + 1}&ndash;${end} of ${totalItems} users (Page ${currentUserPage} of ${totalPages})`;
+        }
+
+        function changeUserPage(page) {
+            currentUserPage = page;
+            renderUsers(currentFilteredUsers, false);
+            const table = document.querySelector('.table-card');
+            if (table) table.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         function handleUserAction(selectEl, idno) {
@@ -857,22 +1047,30 @@ $can_approve = in_array('approve_users', $privileges);
 
             const u = allUsers.find(a => (a.idno || a.id) == idno);
             const username = u ? (u.username || idno) : idno;
+            const isSelf = u && ((u.idno === CURRENT_USER_IDNO) || (CURRENT_USER_USERNAME && u.username === CURRENT_USER_USERNAME));
 
             if (action === 'view') {
                 openViewDetails(idno);
             } else if (action === 'edit') {
+                if (isSelf) {
+                    alert("Dili nimo pwede i-edit ang imong kaugalingon nga account. Mka view ra ka.");
+                    return;
+                }
                 openEditUser(idno);
             } else if (action === 'block') {
+                if (isSelf) return;
                 confirmSensitiveAction('block', idno, 'Are you sure you want to block this user account?', true);
             } else if (action === 'unblock') {
                 confirmSensitiveAction('unblock', idno, 'Are you sure you want to unblock this user account?');
             } else if (action === 'delete') {
-                confirmSensitiveAction('delete', idno, `Are you sure you want to permanently delete account (${escapeHtml(username)})? This will remove the record completely from the database.`, true);
+                if (isSelf) return;
+                confirmSensitiveAction('delete', idno, `Are you sure you want to request deletion of user account (${escapeHtml(username)})? This request and your reason will be forwarded directly to the Super Admin for review and final approval.`, true);
             }
         }
 
         function filterUsers() {
             const search = document.getElementById('searchInput').value.toLowerCase().trim();
+            const idFilter = (document.getElementById('idFilter')?.value || '').toLowerCase().trim();
             const status = document.getElementById('statusFilter').value;
 
             const filtered = allUsers.filter(u => {
@@ -882,12 +1080,13 @@ $can_approve = in_array('approve_users', $privileges);
                 const email = (u.email || '').toLowerCase();
 
                 const matchesSearch = !search || fullName.includes(search) || username.includes(search) || idno.includes(search) || email.includes(search);
+                const matchesId = !idFilter || idno.includes(idFilter);
                 const matchesStatus = status === 'all' || u.status === status;
 
-                return matchesSearch && matchesStatus;
+                return matchesSearch && matchesId && matchesStatus;
             });
 
-            renderUsers(filtered);
+            renderUsers(filtered, true);
         }
 
         function setCreateUserError(inputId, msg) {
@@ -1131,16 +1330,26 @@ $can_approve = in_array('approve_users', $privileges);
             document.getElementById('viewUsername').textContent = u.username;
             document.getElementById('viewFullName').textContent = `${u.firstname || ''} ${u.lastname || ''}`.trim() || 'N/A';
             document.getElementById('viewRole').textContent = 'USER';
-            document.getElementById('viewStatus').textContent = u.status.toUpperCase();
+
+            const isPendingDel = u.status === 'pending_deletion';
+            const statusEl = document.getElementById('viewStatus');
+            statusEl.textContent = isPendingDel ? 'PENDING DELETION (Under Super Admin Review)' : u.status.toUpperCase();
+            statusEl.style.color = isPendingDel ? '#fca5a5' : '#ffffff';
 
             const reasonCell = document.getElementById('viewReasonCell');
             const fileCell = document.getElementById('viewFileCell');
-            const activeReason = u.block_reason || u.delete_reason;
-            const activeFile = u.block_file || u.delete_file;
+            const activeReason = u.delete_reason || u.block_reason;
+            const activeFile = u.delete_file || u.block_file;
 
-            if (activeReason) {
+            if (isPendingDel) {
+                reasonCell.style.display = 'block';
+                document.getElementById('viewReasonLabel').textContent = '⚠️ Deletion Request Reason (Submitted to Super Admin)';
+                document.getElementById('viewReasonLabel').style.color = '#f87171';
+                document.getElementById('viewReasonVal').textContent = u.delete_reason || 'Deletion requested by Admin.';
+            } else if (activeReason) {
                 reasonCell.style.display = 'block';
                 document.getElementById('viewReasonLabel').textContent = u.block_reason ? 'Block Reason' : 'Deactivation / Delete Reason';
+                document.getElementById('viewReasonLabel').style.color = '#f87171';
                 document.getElementById('viewReasonVal').textContent = activeReason;
             } else {
                 reasonCell.style.display = 'none';
@@ -1159,6 +1368,12 @@ $can_approve = in_array('approve_users', $privileges);
         function openEditUser(userId) {
             const u = allUsers.find(a => (a.idno || a.id) == userId);
             if (!u) return;
+
+            const isSelf = (u.idno === CURRENT_USER_IDNO) || (CURRENT_USER_USERNAME && u.username === CURRENT_USER_USERNAME);
+            if (isSelf) {
+                alert("Dili nimo pwede i-edit ang imong kaugalingon nga account. Mka view ra ka.");
+                return;
+            }
 
             clearAllEditUserErrors();
             document.getElementById('editUserId').value = u.idno || u.id;
@@ -1356,6 +1571,20 @@ $can_approve = in_array('approve_users', $privileges);
             const fileInput = document.getElementById('actionFile');
             reasonInput.value = '';
             if (fileInput) fileInput.value = '';
+
+            const isDelete = pendingActionPayload && pendingActionPayload.action === 'delete';
+            const titleEl = document.getElementById('verifTitle');
+            const submitBtn = document.getElementById('verifSubmitBtn');
+
+            if (isDelete) {
+                if (titleEl) titleEl.textContent = 'Submit Deletion Request to Super Admin';
+                if (submitBtn) submitBtn.textContent = 'Submit to Super Admin';
+                reasonInput.placeholder = 'State the detailed reason for requesting user deletion...';
+            } else {
+                if (titleEl) titleEl.textContent = 'Confirm Action';
+                if (submitBtn) submitBtn.textContent = 'Confirm & Execute';
+                reasonInput.placeholder = 'Enter reason for this action...';
+            }
 
             if (requiresReason) {
                 reasonGroup.style.display = 'block';

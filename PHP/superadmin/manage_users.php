@@ -122,7 +122,8 @@ enforce_profile_completion($conn);
             letter-spacing: 0.6px;
         }
 
-        .filter-group select {
+        .filter-group select,
+        .filter-group input {
             padding: 0.7rem 1rem;
             border-radius: 10px;
             border: 1.5px solid #cbd5e1;
@@ -130,12 +131,29 @@ enforce_profile_completion($conn);
             color: #0f172a !important;
             font-size: 0.88rem;
             font-weight: 600;
-            cursor: pointer;
             outline: none;
             transition: all 0.3s ease;
         }
 
-        .filter-group select:focus {
+        .filter-group select {
+            cursor: pointer;
+        }
+
+        .filter-group input {
+            width: 140px;
+            font-family: monospace;
+            font-weight: 700;
+            color: #0284c7 !important;
+        }
+
+        .filter-group input::placeholder {
+            color: #94a3b8 !important;
+            font-family: inherit;
+            font-weight: 500;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
             border-color: #f59e0b !important;
             background: #ffffff !important;
             box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2) !important;
@@ -513,6 +531,23 @@ enforce_profile_completion($conn);
             opacity: 0.95;
         }
 
+        .privilege-item.default-locked {
+            cursor: not-allowed !important;
+            color: #fbbf24;
+            font-weight: 600;
+        }
+
+        .privilege-item.default-locked input[type="checkbox"] {
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+            opacity: 0.95;
+            accent-color: #f59e0b;
+        }
+
+        .privilege-item.default-locked .default-badge {
+            display: inline-block !important;
+        }
+
         .details-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -543,9 +578,75 @@ enforce_profile_completion($conn);
             margin-top: 0.25rem;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        /* Pagination Styling */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 1.5rem;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .pagination .btn-pag,
+        .pagination span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2.4rem;
+            height: 2.4rem;
+            padding: 0 0.75rem;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            color: #0f172a;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .pagination .btn-pag:hover:not(:disabled):not(.active) {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #92400e;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+        }
+
+        .pagination .btn-pag.active {
+            background: linear-gradient(135deg, #d97706, #b45309) !important;
+            border-color: #d97706 !important;
+            color: #fff !important;
+            box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35);
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .pagination span.dots {
+            border-color: transparent;
+            background: transparent;
+            color: #94a3b8;
+            cursor: default;
+        }
+
+        .pagination .btn-pag.disabled,
+        .pagination .btn-pag:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .pagination-info {
+            text-align: center;
+            font-size: 0.82rem;
+            color: #ffffff;
+            font-weight: 600;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+            margin-top: 0.75rem;
         }
     </style>
 </head>
@@ -583,6 +684,11 @@ enforce_profile_completion($conn);
             </div>
             <div class="filter-controls">
                 <div class="filter-group">
+                    <label for="idFilter">ID Number:</label>
+                    <input type="text" id="idFilter" list="idList" placeholder="Filter ID..." oninput="filterAccounts()">
+                    <datalist id="idList"></datalist>
+                </div>
+                <div class="filter-group">
                     <label for="roleFilter">Role:</label>
                     <select id="roleFilter" onchange="filterAccounts()">
                         <option value="all">All Roles</option>
@@ -619,8 +725,11 @@ enforce_profile_completion($conn);
                 <tbody id="accountsTableBody">
                     <tr><td colspan="6" style="text-align: center; color: #64748b; padding: 2rem;">Loading accounts...</td></tr>
                 </tbody>
-            </table>
         </div>
+
+        <!-- Accounts Pagination -->
+        <div id="accountsPagination" class="pagination"></div>
+        <div id="accountsPaginationInfo" class="pagination-info"></div>
     </div>
 
     <!-- Create Account Modal (4 fields only: ID Number, Username, Role, Default Password) -->
@@ -633,7 +742,7 @@ enforce_profile_completion($conn);
             <form id="createAccountForm" onsubmit="handleCreateAccount(event)" novalidate>
                 <div class="form-group-modal">
                     <label>ID Number <span style="color: #cbd5e1; font-size: 0.78rem; font-weight: 600;">(Auto-generated)</span></label>
-                    <input type="text" id="createIdNo" class="form-control-modal" readonly placeholder="Generating..." style="background: #f1f5f9; color: #334155; font-weight: 700; cursor: not-allowed; font-family: monospace;">
+                    <input type="text" id="createIdNo" class="form-control-modal" readonly placeholder="Generating..." style="background: rgba(255, 255, 255, 0.05); color: #94a3b8; cursor: not-allowed; font-family: monospace;">
                     <small class="error-msg" id="createIdNo_error"></small>
                 </div>
 
@@ -651,6 +760,9 @@ enforce_profile_completion($conn);
                         <option value="superadmin">Super Admin</option>
                     </select>
                     <small class="error-msg" id="createRole_error"></small>
+                    <div id="createSuperadminNotice" style="display: none; color: #92400e; font-size: 0.76rem; margin-top: 6px; background: #fef3c7; border: 1px solid rgba(245, 158, 11, 0.45); border-radius: 6px; padding: 6px 10px; line-height: 1.4;">
+                        ⚠️ <strong>Notice:</strong> Only 1 Super Admin can be Active at a time. Creating a new Super Admin will automatically set the new account to <strong>Active</strong>, and your current Super Admin account will be set to <strong>Inactive</strong> and logged out immediately so the new account can be used.
+                    </div>
                 </div>
 
                 <div class="form-group-modal">
@@ -669,10 +781,10 @@ enforce_profile_completion($conn);
                             <span id="createStrengthLabel" style="font-size: 0.75rem; font-weight: 700; color: #cbd5e1;">Weak</span>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; height: 5px;">
-                            <div id="createBar1" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
-                            <div id="createBar2" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
-                            <div id="createBar3" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
-                            <div id="createBar4" style="height: 100%; background: #e2e8f0; border-radius: 3px; transition: background 0.3s ease;"></div>
+                            <div id="createBar1" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
+                            <div id="createBar2" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
+                            <div id="createBar3" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
+                            <div id="createBar4" style="height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 3px; transition: background 0.3s ease;"></div>
                         </div>
                         <small style="color: #cbd5e1; font-size: 0.75rem; font-weight: 500; display: block; margin-top: 5px;">Must be at least 8 characters with uppercase, number, and special character.</small>
                     </div>
@@ -687,13 +799,13 @@ enforce_profile_completion($conn);
                         <span class="superadmin-priv-note" style="display: none; font-size: 0.72rem; color: #fbbf24; font-weight: 600;">🔒 Full access granted (locked)</span>
                     </div>
                     <div class="privilege-box">
-                        <label class="privilege-item"><input type="checkbox" name="create_priv" value="view_users"> View Users</label>
-                        <label class="privilege-item"><input type="checkbox" name="create_priv" value="create_users"> Create Users</label>
+                        <label class="privilege-item"><input type="checkbox" name="create_priv" value="view_users"> View Users <span class="default-badge" style="display: none; font-size: 0.65rem; color: #fbbf24; font-weight: 800; background: rgba(245, 158, 11, 0.15); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.4); margin-left: 4px;">DEFAULT</span></label>
+                        <label class="privilege-item"><input type="checkbox" name="create_priv" value="create_users"> Create Users <span class="default-badge" style="display: none; font-size: 0.65rem; color: #fbbf24; font-weight: 800; background: rgba(245, 158, 11, 0.15); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.4); margin-left: 4px;">DEFAULT</span></label>
                         <label class="privilege-item"><input type="checkbox" name="create_priv" value="edit_users"> Edit Users</label>
                         <label class="privilege-item"><input type="checkbox" name="create_priv" value="delete_users"> Delete Users</label>
                         <label class="privilege-item"><input type="checkbox" name="create_priv" value="block_users"> Block/Unblock Users</label>
                         <label class="privilege-item"><input type="checkbox" name="create_priv" value="view_audit_logs"> View Audit Logs</label>
-                        <label class="privilege-item"><input type="checkbox" name="create_priv" value="approve_users"> Approve Users</label>
+                        <label class="privilege-item"><input type="checkbox" name="create_priv" value="approve_users"> Approve Users <span class="default-badge" style="display: none; font-size: 0.65rem; color: #fbbf24; font-weight: 800; background: rgba(245, 158, 11, 0.15); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.4); margin-left: 4px;">DEFAULT</span></label>
                     </div>
                 </div>
 
@@ -735,11 +847,11 @@ enforce_profile_completion($conn);
                 </div>
                 <div class="details-cell" style="grid-column: 1 / -1;" id="viewPrivilegesCell">
                     <div class="label">Assigned Privileges</div>
-                    <div class="value" id="viewPrivileges" style="font-size: 0.85rem; color: #334155;">None</div>
+                    <div class="value" id="viewPrivileges" style="font-size: 0.88rem; color: #ffffff; font-weight: 500; line-height: 1.5;">None</div>
                 </div>
                 <div class="details-cell" style="grid-column: 1 / -1; display: none;" id="viewReasonCell">
-                    <div class="label" id="viewReasonLabel" style="color: #dc2626;">Reason</div>
-                    <div class="value" id="viewReasonVal" style="color: #991b1b; font-size: 0.85rem; white-space: pre-wrap; margin-top: 0.25rem;"></div>
+                    <div class="label" id="viewReasonLabel" style="color: #f87171;">Reason</div>
+                    <div class="value" id="viewReasonVal" style="color: #fca5a5; font-size: 0.85rem; white-space: pre-wrap; margin-top: 0.25rem;"></div>
                 </div>
                 <div class="details-cell" style="grid-column: 1 / -1; display: none;" id="viewFileCell">
                     <div class="label" style="color: #0284c7;">Attached Supporting File</div>
@@ -764,7 +876,7 @@ enforce_profile_completion($conn);
 
                 <div class="form-group-modal">
                     <label>ID Number <span style="color: #cbd5e1; font-size: 0.78rem; font-weight: 600;">(Cannot be modified)</span></label>
-                    <input type="text" id="editIdNo" class="form-control-modal" readonly style="background: #f1f5f9; color: #334155; font-weight: 700; cursor: not-allowed; font-family: monospace;" required>
+                    <input type="text" id="editIdNo" class="form-control-modal" readonly style="background: rgba(255, 255, 255, 0.05); color: #94a3b8; cursor: not-allowed; font-family: monospace;" required>
                 </div>
 
                 <div class="form-group-modal">
@@ -783,13 +895,13 @@ enforce_profile_completion($conn);
 
                 <div class="form-group-modal">
                     <label>Username <span style="color: #cbd5e1; font-size: 0.78rem; font-weight: 600;">(Cannot be modified)</span></label>
-                    <input type="text" id="editUsername" class="form-control-modal" readonly style="background: #f1f5f9; color: #334155; font-weight: 700; cursor: not-allowed;" required>
+                    <input type="text" id="editUsername" class="form-control-modal" readonly style="background: rgba(255, 255, 255, 0.05); color: #94a3b8; cursor: not-allowed;" required>
                 </div>
 
                 <div class="form-group-modal">
                     <label>Reset Password <span style="color: #cbd5e1; font-size: 0.78rem; font-weight: 600;">(Leave blank to keep unchanged)</span></label>
                     <div style="position: relative;">
-                        <input type="password" id="editPassword" class="form-control-modal" placeholder="Enter new password if resetting" style="padding-right: 2.5rem;" oninput="checkEditPasswordStrength()">
+                        <input type="password" id="editPassword" class="form-control-modal" placeholder="Enter new password if resetting" autocomplete="new-password" style="padding-right: 2.5rem;" oninput="checkEditPasswordStrength()">
                         <button type="button" class="password-toggle-btn" onclick="toggleEditPasswordVisibility(this)" aria-label="Toggle password visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #cbd5e1; cursor: pointer; padding: 0; display: flex; align-items: center;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         </button>
@@ -839,13 +951,13 @@ enforce_profile_completion($conn);
                         <span class="superadmin-priv-note" style="display: none; font-size: 0.72rem; color: #b45309; font-weight: 600;">🔒 Full access granted (locked)</span>
                     </div>
                     <div class="privilege-box">
-                        <label class="privilege-item"><input type="checkbox" name="edit_priv" value="view_users"> View Users</label>
-                        <label class="privilege-item"><input type="checkbox" name="edit_priv" value="create_users"> Create Users</label>
+                        <label class="privilege-item"><input type="checkbox" name="edit_priv" value="view_users"> View Users <span class="default-badge" style="display: none; font-size: 0.65rem; color: #fbbf24; font-weight: 800; background: rgba(245, 158, 11, 0.15); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.4); margin-left: 4px;">DEFAULT</span></label>
+                        <label class="privilege-item"><input type="checkbox" name="edit_priv" value="create_users"> Create Users <span class="default-badge" style="display: none; font-size: 0.65rem; color: #fbbf24; font-weight: 800; background: rgba(245, 158, 11, 0.15); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.4); margin-left: 4px;">DEFAULT</span></label>
                         <label class="privilege-item"><input type="checkbox" name="edit_priv" value="edit_users"> Edit Users</label>
                         <label class="privilege-item"><input type="checkbox" name="edit_priv" value="delete_users"> Delete Users</label>
                         <label class="privilege-item"><input type="checkbox" name="edit_priv" value="block_users"> Block/Unblock Users</label>
                         <label class="privilege-item"><input type="checkbox" name="edit_priv" value="view_audit_logs"> View Audit Logs</label>
-                        <label class="privilege-item"><input type="checkbox" name="edit_priv" value="approve_users"> Approve Users</label>
+                        <label class="privilege-item"><input type="checkbox" name="edit_priv" value="approve_users"> Approve Users <span class="default-badge" style="display: none; font-size: 0.65rem; color: #fbbf24; font-weight: 800; background: rgba(245, 158, 11, 0.15); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.4); margin-left: 4px;">DEFAULT</span></label>
                     </div>
                 </div>
 
@@ -861,8 +973,8 @@ enforce_profile_completion($conn);
     <div class="app-modal-overlay" id="verificationModal">
         <div class="app-modal-card" style="max-width: 440px; text-align: center;">
             <div style="font-size: 2.5rem; margin-bottom: 0.5rem;" id="verifIcon">&#128274;</div>
-            <h3 id="verifTitle" style="color: #0f172a; margin-bottom: 0.5rem; font-size: 1.25rem;">Confirm Action</h3>
-            <p id="verifPrompt" style="color: #475569; font-size: 0.88rem; margin-bottom: 1.25rem;">Please enter your current administrator password to confirm this action.</p>
+            <h3 id="verifTitle" style="color: #ffffff; margin-bottom: 0.5rem; font-size: 1.25rem;">Confirm Action</h3>
+            <p id="verifPrompt" style="color: #cbd5e1; font-size: 0.88rem; margin-bottom: 1.25rem;">Please enter your current administrator password to confirm this action.</p>
 
             <form id="verificationForm" onsubmit="executeVerifiedAction(event)">
                 <!-- Reason input (required for delete and block) -->
@@ -870,8 +982,8 @@ enforce_profile_completion($conn);
                     <label>Reason <span style="color: #ef4444;">*</span></label>
                     <textarea id="actionReason" class="form-control-modal" placeholder="Enter reason for this action..." rows="2"></textarea>
                     
-                    <label style="margin-top: 0.85rem; display: block; font-size: 0.84rem; font-weight: 700; color: #1e293b;">Attach Supporting File / Document <span style="color: #64748b; font-weight: normal; font-size: 0.75rem;">(Optional)</span></label>
-                    <input type="file" id="actionFile" class="form-control-modal" style="padding: 0.45rem 0.6rem; font-size: 0.82rem; color: #334155; background: #ffffff; border: 1px solid #cbd5e1;" accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.txt">
+                    <label style="margin-top: 0.85rem; display: block; font-size: 0.82rem; color: #cbd5e1;">Attach Supporting File / Document <span style="color: #94a3b8; font-weight: normal; font-size: 0.75rem;">(Optional)</span></label>
+                    <input type="file" id="actionFile" class="form-control-modal" style="padding: 0.45rem 0.6rem; font-size: 0.82rem; color: #94a3b8; background: rgba(255, 255, 255, 0.05);" accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.txt">
                 </div>
 
                 <div class="form-group-modal" style="text-align: left;">
@@ -924,8 +1036,12 @@ enforce_profile_completion($conn);
 
     <script>
         const CURRENT_USER_IDNO = '<?php echo $_SESSION["user_id"]; ?>';
+        const CURRENT_USER_USERNAME = '<?php echo addslashes($_SESSION["username"] ?? ""); ?>';
         let allAccounts = [];
         let pendingActionPayload = null;
+        let currentAccountPage = 1;
+        const accountsPerPage = 10;
+        let currentFilteredAccounts = [];
 
         document.addEventListener('DOMContentLoaded', () => {
             loadAccounts();
@@ -967,7 +1083,8 @@ enforce_profile_completion($conn);
                 .then(data => {
                     if (data.success) {
                         allAccounts = data.users || [];
-                        renderAccounts(allAccounts);
+                        updateIdFilterOptions(allAccounts);
+                        filterAccounts();
                     } else {
                         alert(data.error || 'Failed to load accounts');
                     }
@@ -977,32 +1094,61 @@ enforce_profile_completion($conn);
                 });
         }
 
-        function renderAccounts(accounts) {
+        function updateIdFilterOptions(accounts) {
+            const dl = document.getElementById('idList');
+            if (!dl) return;
+            const ids = [...new Set(accounts.map(a => a.idno).filter(Boolean))].sort();
+            dl.innerHTML = ids.map(id => `<option value="${id}">`).join('');
+        }
+
+        function renderAccounts(accounts, resetPage = false) {
+            if (resetPage) currentAccountPage = 1;
+            currentFilteredAccounts = accounts || [];
+
             const tbody = document.getElementById('accountsTableBody');
-            if (!accounts || accounts.length === 0) {
+            if (!currentFilteredAccounts || currentFilteredAccounts.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 2rem;">No accounts found.</td></tr>';
+                renderAccountsPagination(0, 0);
                 return;
             }
 
-            tbody.innerHTML = accounts.map(acc => {
-                const isSelf = acc.idno === CURRENT_USER_IDNO;
+            const totalPages = Math.ceil(currentFilteredAccounts.length / accountsPerPage) || 1;
+            if (currentAccountPage > totalPages) currentAccountPage = totalPages;
+            if (currentAccountPage < 1) currentAccountPage = 1;
+
+            const start = (currentAccountPage - 1) * accountsPerPage;
+            const end = Math.min(start + accountsPerPage, currentFilteredAccounts.length);
+            const pagedAccounts = currentFilteredAccounts.slice(start, end);
+
+            tbody.innerHTML = pagedAccounts.map(acc => {
+                const isSelf = (acc.idno === CURRENT_USER_IDNO) || (CURRENT_USER_USERNAME && acc.username === CURRENT_USER_USERNAME);
                 const fullName = `${acc.firstname || ''} ${acc.lastname || ''}`.trim() || acc.username;
                 const roleBadge = `<span class="badge badge-role-${acc.role}">${(acc.role || '').toUpperCase()}</span>`;
-                const statusBadge = `<span class="badge badge-status-${acc.status}">${(acc.status || '').toUpperCase()}</span>`;
+                let statusBadge = `<span class="badge badge-status-${acc.status}">${(acc.status || '').toUpperCase()}</span>`;
+                if (acc.status === 'pending_deletion') {
+                    statusBadge = `<span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.45); font-weight: 700;">PENDING DELETION</span>`;
+                }
 
                 let actionOptions = `
                     <option value="" disabled selected>Actions</option>
                     <option value="view">View</option>
-                    <option value="edit">Edit</option>
                 `;
 
                 if (!isSelf) {
-                    if (acc.status === 'active') {
-                        actionOptions += `<option value="block">Block</option>`;
-                    } else if (acc.status === 'blocked') {
-                        actionOptions += `<option value="unblock">Unblock</option>`;
+                    if (acc.status === 'pending_deletion') {
+                        actionOptions += `
+                            <option value="approve_deletion" style="color: #ef4444; font-weight: 700;">Approve Deletion</option>
+                            <option value="reject_deletion" style="color: #10b981; font-weight: 700;">Reject Deletion</option>
+                        `;
+                    } else {
+                        actionOptions += `<option value="edit">Edit</option>`;
+                        if (acc.status === 'active') {
+                            actionOptions += `<option value="block">Block</option>`;
+                        } else if (acc.status === 'blocked') {
+                            actionOptions += `<option value="unblock">Unblock</option>`;
+                        }
+                        actionOptions += `<option value="delete" class="opt-delete">Delete</option>`;
                     }
-                    actionOptions += `<option value="delete" class="opt-delete">Delete</option>`;
                 }
 
                 return `
@@ -1020,6 +1166,67 @@ enforce_profile_completion($conn);
                     </tr>
                 `;
             }).join('');
+
+            renderAccountsPagination(totalPages, currentFilteredAccounts.length, start, end);
+        }
+
+        function renderAccountsPagination(totalPages, totalItems, start = 0, end = 0) {
+            const pagContainer = document.getElementById('accountsPagination');
+            const infoContainer = document.getElementById('accountsPaginationInfo');
+            if (!pagContainer || !infoContainer) return;
+
+            if (totalPages <= 1) {
+                pagContainer.innerHTML = '';
+                infoContainer.innerHTML = totalItems > 0 ? `Showing ${totalItems} account${totalItems > 1 ? 's' : ''}` : '';
+                return;
+            }
+
+            let html = '';
+            // Prev button
+            if (currentAccountPage > 1) {
+                html += `<button type="button" class="btn-pag" onclick="changeAccountPage(${currentAccountPage - 1})">&laquo; Prev</button>`;
+            } else {
+                html += `<button type="button" class="btn-pag disabled" disabled>&laquo; Prev</button>`;
+            }
+
+            // Window numbers
+            const windowSize = 2;
+            let pages = [];
+            for (let p = 1; p <= totalPages; p++) {
+                if (p === 1 || p === totalPages || (p >= currentAccountPage - windowSize && p <= currentAccountPage + windowSize)) {
+                    pages.push(p);
+                }
+            }
+
+            let lastP = null;
+            pages.forEach(p => {
+                if (lastP !== null && p - lastP > 1) {
+                    html += `<span class="dots">&hellip;</span>`;
+                }
+                if (p === currentAccountPage) {
+                    html += `<button type="button" class="btn-pag active">${p}</button>`;
+                } else {
+                    html += `<button type="button" class="btn-pag" onclick="changeAccountPage(${p})">${p}</button>`;
+                }
+                lastP = p;
+            });
+
+            // Next button
+            if (currentAccountPage < totalPages) {
+                html += `<button type="button" class="btn-pag" onclick="changeAccountPage(${currentAccountPage + 1})">Next &raquo;</button>`;
+            } else {
+                html += `<button type="button" class="btn-pag disabled" disabled>Next &raquo;</button>`;
+            }
+
+            pagContainer.innerHTML = html;
+            infoContainer.innerHTML = `Showing ${start + 1}&ndash;${end} of ${totalItems} accounts (Page ${currentAccountPage} of ${totalPages})`;
+        }
+
+        function changeAccountPage(page) {
+            currentAccountPage = page;
+            renderAccounts(currentFilteredAccounts, false);
+            const table = document.querySelector('.table-card');
+            if (table) table.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         function handleAccountAction(selectEl, idno) {
@@ -1029,22 +1236,34 @@ enforce_profile_completion($conn);
 
             const acc = allAccounts.find(a => (a.idno || a.id) == idno);
             const username = acc ? (acc.username || idno) : idno;
+            const isSelf = acc && ((acc.idno === CURRENT_USER_IDNO) || (CURRENT_USER_USERNAME && acc.username === CURRENT_USER_USERNAME));
 
             if (action === 'view') {
                 openViewDetails(idno);
             } else if (action === 'edit') {
+                if (isSelf) {
+                    alert("Dili nimo pwede i-edit ang imong kaugalingon nga account. Mka view ra ka.");
+                    return;
+                }
                 openEditAccount(idno);
             } else if (action === 'block') {
+                if (isSelf) return;
                 confirmSensitiveAction('block', idno, 'Are you sure you want to block this account?', true);
             } else if (action === 'unblock') {
                 confirmSensitiveAction('unblock', idno, 'Are you sure you want to unblock this account?');
             } else if (action === 'delete') {
+                if (isSelf) return;
                 confirmSensitiveAction('delete', idno, `Are you sure you want to permanently delete account (${escapeHtml(username)})? This will remove the record completely from the database.`, true);
+            } else if (action === 'approve_deletion') {
+                confirmSensitiveAction('approve_deletion', idno, `Are you sure you want to approve the deletion request for (${escapeHtml(username)})? This will permanently delete the account from the database.`);
+            } else if (action === 'reject_deletion') {
+                confirmSensitiveAction('reject_deletion', idno, `Are you sure you want to reject the deletion request for (${escapeHtml(username)})? The account will be restored to Active status.`, true);
             }
         }
 
         function filterAccounts() {
             const search = document.getElementById('searchInput').value.toLowerCase().trim();
+            const idFilter = (document.getElementById('idFilter')?.value || '').toLowerCase().trim();
             const role = document.getElementById('roleFilter').value;
             const status = document.getElementById('statusFilter').value;
 
@@ -1055,13 +1274,14 @@ enforce_profile_completion($conn);
                 const email = (acc.email || '').toLowerCase();
 
                 const matchesSearch = !search || fullName.includes(search) || username.includes(search) || idno.includes(search) || email.includes(search);
+                const matchesId = !idFilter || idno.includes(idFilter);
                 const matchesRole = role === 'all' || acc.role === role;
                 const matchesStatus = status === 'all' || acc.status === status;
 
-                return matchesSearch && matchesRole && matchesStatus;
+                return matchesSearch && matchesId && matchesRole && matchesStatus;
             });
 
-            renderAccounts(filtered);
+            renderAccounts(filtered, true);
         }
 
         function togglePrivilegeSection(context) {
@@ -1081,20 +1301,32 @@ enforce_profile_completion($conn);
                     checkboxes.forEach(cb => {
                         cb.checked = true;
                         cb.disabled = true;
+                        const parentLabel = cb.closest('.privilege-item');
+                        if (parentLabel) parentLabel.classList.remove('default-locked');
                     });
                 } else if (roleSelect.value === 'admin') {
                     privSection.style.display = 'block';
                     if (privBox) privBox.classList.remove('locked');
                     if (lockNote) lockNote.style.display = 'none';
-                    // Checkboxes are editable for Admin
-                    checkboxes.forEach(cb => {
-                        cb.disabled = false;
-                    });
+
+                    const defaultAdminPrivs = ['view_users', 'create_users', 'approve_users'];
 
                     if (context === 'create') {
-                        checkboxes.forEach(cb => cb.checked = false);
+                        checkboxes.forEach(cb => {
+                            const isDefault = defaultAdminPrivs.includes(cb.value);
+                            const parentLabel = cb.closest('.privilege-item');
+                            if (isDefault) {
+                                cb.checked = true;
+                                cb.disabled = true; // Default privileges CANNOT be unchecked
+                                if (parentLabel) parentLabel.classList.add('default-locked');
+                            } else {
+                                cb.checked = false;
+                                cb.disabled = false;
+                                if (parentLabel) parentLabel.classList.remove('default-locked');
+                            }
+                        });
                     } else if (context === 'edit') {
-                        // In edit mode: restore account's saved privileges or keep unchecked
+                        // In edit mode: restore account's saved privileges and lock default ones
                         const editUserId = document.getElementById('editUserId').value;
                         const acc = allAccounts.find(a => (a.idno || a.id) == editUserId);
                         let savedPrivs = [];
@@ -1102,7 +1334,17 @@ enforce_profile_completion($conn);
                             try { savedPrivs = JSON.parse(acc.privileges); } catch(e) {}
                         }
                         checkboxes.forEach(cb => {
-                            cb.checked = Array.isArray(savedPrivs) && savedPrivs.includes(cb.value);
+                            const isDefault = defaultAdminPrivs.includes(cb.value);
+                            const parentLabel = cb.closest('.privilege-item');
+                            if (isDefault) {
+                                cb.checked = true;
+                                cb.disabled = true; // Default privileges CANNOT be unchecked
+                                if (parentLabel) parentLabel.classList.add('default-locked');
+                            } else {
+                                cb.disabled = false;
+                                if (parentLabel) parentLabel.classList.remove('default-locked');
+                                cb.checked = Array.isArray(savedPrivs) && savedPrivs.includes(cb.value);
+                            }
                         });
                     }
                 } else {
@@ -1112,6 +1354,8 @@ enforce_profile_completion($conn);
                     checkboxes.forEach(cb => {
                         cb.checked = false;
                         cb.disabled = false;
+                        const parentLabel = cb.closest('.privilege-item');
+                        if (parentLabel) parentLabel.classList.remove('default-locked');
                     });
                 }
             }
@@ -1309,11 +1553,25 @@ enforce_profile_completion($conn);
                 label.style.color = color;
             }
 
+            var hasRepeated = false;
+            for (var i = 0; i < pwd.length - 2; i++) {
+                if (pwd[i] === pwd[i+1] && pwd[i] === pwd[i+2]) {
+                    hasRepeated = true;
+                    break;
+                }
+            }
+
             if (pwd.length < 8) {
                 setCreateAccountError('createPassword', 'Password must be at least 8 characters long.');
                 return false;
             } else if (!/[A-Z]/.test(pwd) || !/[0-9]/.test(pwd) || !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) {
                 setCreateAccountError('createPassword', 'Must include uppercase, number, and special symbol.');
+                return false;
+            } else if (hasRepeated) {
+                setCreateAccountError('createPassword', 'Password is too weak. Cannot contain 3 consecutive repeated characters.');
+                return false;
+            } else if (score < 4) {
+                setCreateAccountError('createPassword', 'Password is too weak. Please choose a stronger password.');
                 return false;
             } else {
                 clearCreateAccountError('createPassword');
@@ -1358,6 +1616,10 @@ enforce_profile_completion($conn);
         function handleCreateRoleChange() {
             togglePrivilegeSection('create');
             const role = document.getElementById('createRole').value;
+            const saNotice = document.getElementById('createSuperadminNotice');
+            if (saNotice) {
+                saNotice.style.display = (role === 'superadmin') ? 'block' : 'none';
+            }
             const idInput = document.getElementById('createIdNo');
             if (idInput) {
                 idInput.value = 'Generating...';
@@ -1378,6 +1640,8 @@ enforce_profile_completion($conn);
         function openCreateAccountModal() {
             document.getElementById('createAccountForm').reset();
             clearAllCreateAccountErrors();
+            const saNotice = document.getElementById('createSuperadminNotice');
+            if (saNotice) saNotice.style.display = 'none';
             const pwdInput = document.getElementById('createPassword');
             if (pwdInput) {
                 pwdInput.value = '';
@@ -1418,8 +1682,10 @@ enforce_profile_completion($conn);
             if (roleVal === 'superadmin') {
                 privs = ['view_users', 'create_users', 'edit_users', 'delete_users', 'block_users', 'view_audit_logs', 'approve_users'];
             } else if (roleVal === 'admin') {
+                const defaultAdminPrivs = ['view_users', 'create_users', 'approve_users'];
                 const privCheckboxes = document.querySelectorAll('input[name="create_priv"]:checked');
-                privs = Array.from(privCheckboxes).map(cb => cb.value);
+                const checkedPrivs = Array.from(privCheckboxes).map(cb => cb.value);
+                privs = Array.from(new Set([...defaultAdminPrivs, ...checkedPrivs]));
             }
             const usernameVal = document.getElementById('createUsername').value.trim();
             const pwdInput = document.getElementById('createPassword');
@@ -1444,7 +1710,11 @@ enforce_profile_completion($conn);
                 if (res.success) {
                     alert(res.message);
                     closeModal('createAccountModal');
-                    loadAccounts();
+                    if (res.self_deactivated && res.redirect) {
+                        window.location.href = res.redirect;
+                    } else {
+                        loadAccounts();
+                    }
                 } else {
                     if (res.error && res.error.toLowerCase().includes('username')) {
                         setCreateAccountError('createUsername', res.error);
@@ -1468,7 +1738,10 @@ enforce_profile_completion($conn);
             document.getElementById('viewUsername').textContent = acc.username;
             document.getElementById('viewFullName').textContent = `${acc.firstname || ''} ${acc.lastname || ''}`.trim() || 'N/A';
             document.getElementById('viewRole').textContent = acc.role.toUpperCase();
-            document.getElementById('viewStatus').textContent = acc.status.toUpperCase();
+            const isPendingDel = acc.status === 'pending_deletion';
+            const statusEl = document.getElementById('viewStatus');
+            statusEl.textContent = isPendingDel ? 'PENDING DELETION (Requested by Admin)' : acc.status.toUpperCase();
+            statusEl.style.color = isPendingDel ? '#fca5a5' : '#ffffff';
 
             let privText = 'None (Standard User)';
             if (acc.privileges) {
@@ -1492,12 +1765,19 @@ enforce_profile_completion($conn);
 
             const reasonCell = document.getElementById('viewReasonCell');
             const fileCell = document.getElementById('viewFileCell');
-            const activeReason = acc.block_reason || acc.delete_reason;
-            const activeFile = acc.block_file || acc.delete_file;
+            const activeReason = acc.delete_reason || acc.block_reason;
+            const activeFile = acc.delete_file || acc.block_file;
 
-            if (activeReason) {
+            if (isPendingDel) {
+                reasonCell.style.display = 'block';
+                const reqAdmin = acc.delete_requested_by ? ` (Requested by Admin: ${escapeHtml(acc.delete_requested_by)})` : '';
+                document.getElementById('viewReasonLabel').textContent = `⚠️ Deletion Request Reason${reqAdmin}`;
+                document.getElementById('viewReasonLabel').style.color = '#f87171';
+                document.getElementById('viewReasonVal').textContent = acc.delete_reason || 'Deletion requested by Admin.';
+            } else if (activeReason) {
                 reasonCell.style.display = 'block';
                 document.getElementById('viewReasonLabel').textContent = acc.block_reason ? 'Block Reason' : 'Deactivation / Delete Reason';
+                document.getElementById('viewReasonLabel').style.color = '#f87171';
                 document.getElementById('viewReasonVal').textContent = activeReason;
             } else {
                 reasonCell.style.display = 'none';
@@ -1517,6 +1797,12 @@ enforce_profile_completion($conn);
             const acc = allAccounts.find(a => (a.idno || a.id) == userId);
             if (!acc) return;
 
+            const isSelf = (acc.idno === CURRENT_USER_IDNO) || (CURRENT_USER_USERNAME && acc.username === CURRENT_USER_USERNAME);
+            if (isSelf) {
+                alert("Dili nimo pwede i-edit ang imong kaugalingon nga account. Mka view ra ka.");
+                return;
+            }
+
             clearAllEditAccountErrors();
             document.getElementById('editUserId').value = acc.idno || acc.id;
             document.getElementById('editIdNo').value = acc.idno || '';
@@ -1535,16 +1821,21 @@ enforce_profile_completion($conn);
             // Privileges
             const privCheckboxes = document.querySelectorAll('input[name="edit_priv"]');
             privCheckboxes.forEach(cb => cb.checked = false);
+            let parsedPrivs = [];
             if (acc.privileges) {
                 try {
                     const parsed = JSON.parse(acc.privileges);
-                    if (Array.isArray(parsed)) {
-                        privCheckboxes.forEach(cb => {
-                            if (parsed.includes(cb.value)) cb.checked = true;
-                        });
-                    }
+                    if (Array.isArray(parsed)) parsedPrivs = parsed;
                 } catch(e) {}
             }
+            if (acc.role === 'admin') {
+                const defaultAdminPrivs = ['view_users', 'create_users', 'approve_users'];
+                parsedPrivs = Array.from(new Set([...defaultAdminPrivs, ...parsedPrivs]));
+            }
+
+            privCheckboxes.forEach(cb => {
+                if (parsedPrivs.includes(cb.value)) cb.checked = true;
+            });
 
             if (acc.role === 'superadmin') {
                 privCheckboxes.forEach(cb => cb.checked = true);
@@ -1761,10 +2052,22 @@ enforce_profile_completion($conn);
                 label.style.color = color;
             }
 
+            var hasRepeated = false;
+            for (var i = 0; i < pwd.length - 2; i++) {
+                if (pwd[i] === pwd[i+1] && pwd[i] === pwd[i+2]) {
+                    hasRepeated = true;
+                    break;
+                }
+            }
+
             if (pwd.length < 8) {
                 setEditAccountError('editPassword', 'Password must be at least 8 characters long.');
             } else if (!/[A-Z]/.test(pwd) || !/[0-9]/.test(pwd) || !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) {
                 setEditAccountError('editPassword', 'Must include uppercase, number, and special symbol.');
+            } else if (hasRepeated) {
+                setEditAccountError('editPassword', 'Password is too weak. Cannot contain 3 consecutive repeated characters.');
+            } else if (score < 4) {
+                setEditAccountError('editPassword', 'Password is too weak. Please choose a stronger password.');
             } else {
                 clearEditAccountError('editPassword');
             }
@@ -1819,8 +2122,10 @@ enforce_profile_completion($conn);
                 if (roleVal === 'superadmin') {
                     privs = ['view_users', 'create_users', 'edit_users', 'delete_users', 'block_users', 'view_audit_logs', 'approve_users'];
                 } else if (roleVal === 'admin') {
+                    const defaultAdminPrivs = ['view_users', 'create_users', 'approve_users'];
                     const privCheckboxes = document.querySelectorAll('input[name="edit_priv"]:checked');
-                    privs = Array.from(privCheckboxes).map(cb => cb.value);
+                    const checkedPrivs = Array.from(privCheckboxes).map(cb => cb.value);
+                    privs = Array.from(new Set([...defaultAdminPrivs, ...checkedPrivs]));
                 }
 
                 pendingActionPayload = {
@@ -1912,7 +2217,20 @@ enforce_profile_completion($conn);
                 method: 'POST',
                 body: formData
             })
-            .then(r => r.json())
+            .then(async r => {
+                const text = await r.text();
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    const jsonStart = text.indexOf('{');
+                    if (jsonStart !== -1) {
+                        try {
+                            return JSON.parse(text.substring(jsonStart));
+                        } catch (e2) {}
+                    }
+                    throw new Error(text || 'Invalid server response');
+                }
+            })
             .then(res => {
                 if (res.success) {
                     alert(res.message);
@@ -1923,7 +2241,12 @@ enforce_profile_completion($conn);
                         loadAccounts();
                     }
                 } else {
-                    alert('Action Failed: ' + (res.error || 'Unknown error'));
+                    if (res.error === 'Unauthorized' || res.error === 'Account inactive') {
+                        alert(res.message || 'Your session has expired. Redirecting to login page...');
+                        window.location.href = res.redirect || '../login.php';
+                    } else {
+                        alert('Action Failed: ' + (res.error || 'Unknown error'));
+                    }
                 }
             })
             .catch(err => alert('Network error: ' + err));

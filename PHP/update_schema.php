@@ -30,9 +30,13 @@ if ($status_result && mysqli_num_rows($status_result) == 0) {
         echo "<p style='color: red;'>Error adding 'status' column: " . mysqli_error($conn) . "</p>";
     }
 } else {
-    // Modify status ENUM to ensure active, blocked, pending, inactive are all supported
-    mysqli_query($conn, "ALTER TABLE `user` MODIFY `status` ENUM('active', 'blocked', 'pending', 'inactive') NOT NULL DEFAULT 'active'");
-    echo "<p style='color: green;'>Column 'status' updated with valid ENUM values.</p>";
+    // Modify status ENUM to ensure active, approved, blocked, pending, inactive, pending_deletion are all supported
+    $res_status = mysqli_query($conn, "ALTER TABLE `user` MODIFY `status` ENUM('active', 'approved', 'blocked', 'pending', 'inactive', 'pending_deletion') NOT NULL DEFAULT 'active'");
+    if (!$res_status) {
+        echo "<p style='color: red;'>Error altering status ENUM: " . mysqli_error($conn) . "</p>";
+    } else {
+        echo "<p style='color: green;'>Column 'status' updated with valid ENUM values (including pending_deletion).</p>";
+    }
 }
 
 // 3. Ensure 'must_change_password' column
@@ -70,6 +74,9 @@ if ($priv_result && mysqli_num_rows($priv_result) == 0) {
     echo "<p style='color: orange;'>Column 'privileges' already exists.</p>";
 }
 
+// Assign default privileges to admins if currently empty or NULL
+mysqli_query($conn, "UPDATE `user` SET `privileges` = '[\"view_users\",\"create_users\",\"approve_users\"]' WHERE `role` = 'admin' AND (`privileges` IS NULL OR `privileges` = '' OR `privileges` = '[]')");
+
 // 5. Ensure 'block_reason' column
 $br_query = "SHOW COLUMNS FROM `user` LIKE 'block_reason'";
 $br_result = mysqli_query($conn, $br_query);
@@ -82,6 +89,19 @@ $dr_query = "SHOW COLUMNS FROM `user` LIKE 'delete_reason'";
 $dr_result = mysqli_query($conn, $dr_query);
 if ($dr_result && mysqli_num_rows($dr_result) == 0) {
     mysqli_query($conn, "ALTER TABLE `user` ADD `delete_reason` VARCHAR(255) DEFAULT NULL");
+}
+
+// 6.1 Ensure 'delete_requested_by' and 'delete_requested_at' columns
+$drb_query = "SHOW COLUMNS FROM `user` LIKE 'delete_requested_by'";
+$drb_result = mysqli_query($conn, $drb_query);
+if ($drb_result && mysqli_num_rows($drb_result) == 0) {
+    mysqli_query($conn, "ALTER TABLE `user` ADD `delete_requested_by` VARCHAR(100) DEFAULT NULL");
+}
+
+$dra_query = "SHOW COLUMNS FROM `user` LIKE 'delete_requested_at'";
+$dra_result = mysqli_query($conn, $dra_query);
+if ($dra_result && mysqli_num_rows($dra_result) == 0) {
+    mysqli_query($conn, "ALTER TABLE `user` ADD `delete_requested_at` DATETIME DEFAULT NULL");
 }
 
 // 7. Seed Default Users (Admin and Superadmin)

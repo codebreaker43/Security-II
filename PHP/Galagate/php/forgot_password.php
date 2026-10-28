@@ -130,6 +130,14 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['submit_idno'])) {
                     $_SESSION['reset_username'] = $user_data['username'];
                     $_SESSION['reset_email'] = $user_data['email'];
 
+                    // If account has no registered email, proceed directly to Step 3 (Security Questions)
+                    if (empty($user_data['email'])) {
+                        $_SESSION['otp_verified'] = true;
+                        $_SESSION['otp_status_msg'] = "No email address registered. Please answer all three (3) Security Questions to reset your password.";
+                        header("Location: forgot_password.php?step=3");
+                        exit;
+                    }
+
                     // Send OTP and proceed to Step 2
                     $otp_res = create_and_send_otp($conn, $user_data['idno'], $user_data['username'], $user_data['email']);
                     $_SESSION['otp_status_msg'] = $otp_res['message'];
@@ -232,6 +240,10 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['submit_otp'])) {
 // ----------------------------------------------------
 // STEP 3: Verify Security Question
 // ----------------------------------------------------
+if ($step === 3 && isset($_GET['verify_via']) && $_GET['verify_via'] === 'security' && isset($_SESSION['reset_user_id'])) {
+    $_SESSION['otp_verified'] = true;
+}
+
 if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['submit_security'])) {
     if (!isset($_SESSION['reset_user_id']) || !isset($_SESSION['otp_verified']) || !$_SESSION['otp_verified']) {
         header("Location: forgot_password.php?step=1");
@@ -239,11 +251,12 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['submit_security'])) {
     }
 
     $user_id = $_SESSION['reset_user_id'];
-    $selected_q = isset($_POST['security_question']) ? trim($_POST['security_question']) : '';
-    $entered_ans = isset($_POST['security_answer']) ? strtolower(trim($_POST['security_answer'])) : '';
+    $ans1 = trim($_POST['security_answer1'] ?? '');
+    $ans2 = trim($_POST['security_answer2'] ?? '');
+    $ans3 = trim($_POST['security_answer3'] ?? '');
 
-    if (empty($entered_ans)) {
-        $error_message = "Please enter your security answer.";
+    if ($ans1 === '' || $ans2 === '' || $ans3 === '') {
+        $error_message = "Please answer all three (3) security questions.";
     } else {
         $stmt_sq = mysqli_prepare($conn, "SELECT security_question1, security_answer1, security_question2, security_answer2, security_question3, security_answer3 FROM user WHERE idno = ? LIMIT 1");
         mysqli_stmt_bind_param($stmt_sq, "s", $user_id);
@@ -252,33 +265,40 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['submit_security'])) {
         mysqli_stmt_close($stmt_sq);
 
         if ($user_data) {
-            $is_correct = false;
+            $correct_count = 0;
+            $answers_input = [1 => $ans1, 2 => $ans2, 3 => $ans3];
 
             for ($i = 1; $i <= 3; $i++) {
-                $q_val = $user_data["security_question$i"] ?? '';
-                $a_val = $user_data["security_answer$i"] ?? '';
+                $saved_ans = trim((string)($user_data["security_answer$i"] ?? ''));
+                $entered = $answers_input[$i];
 
-                if (!empty($q_val) && ($q_val === $selected_q || empty($selected_q))) {
-                    if (str_starts_with($a_val, '$2y$') || str_starts_with($a_val, '$2a$') || str_starts_with($a_val, '$2b$')) {
-                        if (password_verify($entered_ans, $a_val) || password_verify(trim($_POST['security_answer']), $a_val)) {
-                            $is_correct = true;
-                            break;
-                        }
-                    } else {
-                        if ($entered_ans === strtolower(trim($a_val))) {
-                            $is_correct = true;
-                            break;
-                        }
+                if ($saved_ans === '') {
+                    continue;
+                }
+
+                $match = false;
+                if (str_starts_with($saved_ans, '$2y$') || str_starts_with($saved_ans, '$2a$') || str_starts_with($saved_ans, '$2b$')) {
+                    if (password_verify($entered, $saved_ans) || password_verify(strtolower($entered), $saved_ans)) {
+                        $match = true;
                     }
+                } else {
+                    if (strtolower($entered) === strtolower($saved_ans)) {
+                        $match = true;
+                    }
+                }
+
+                if ($match) {
+                    $correct_count++;
                 }
             }
 
-            if ($is_correct) {
+            // Must answer at least 2 correctly to proceed (if 1 or 0, cannot proceed)
+            if ($correct_count >= 2) {
                 $_SESSION['security_verified'] = true;
                 header("Location: forgot_password.php?step=4");
                 exit;
             } else {
-                $error_message = "Incorrect security answer. Please verify and try again.";
+                $error_message = "You must answer at least two (2) security questions correctly to proceed. ($correct_count of 3 correct)";
             }
         } else {
             $error_message = "Account information error. Please restart the process.";
@@ -368,12 +388,14 @@ if ($step == 3 && isset($_SESSION['reset_user_id'])) {
     $q_res = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt_g));
     mysqli_stmt_close($stmt_g);
 
-    if ($q_res) {
-        for ($i = 1; $i <= 3; $i++) {
-            if (!empty($q_res["security_question$i"])) {
-                $user_security_questions[] = $q_res["security_question$i"];
-            }
-        }
+    $fallback_q = [
+        1 => "What is your mother's maiden name?",
+        2 => "What is the name of your favorite teacher?",
+        3 => "What is your favorite color?"
+    ];
+
+    for ($i = 1; $i <= 3; $i++) {
+        $user_security_questions[$i] = !empty($q_res["security_question$i"]) ? $q_res["security_question$i"] : $fallback_q[$i];
     }
 }
 
@@ -838,33 +860,34 @@ if (isset($_SESSION['otp_status_msg'])) {
                         Resend OTP Code
                     </button>
                 </form>
+
+                <div style="text-align: center; margin-top: 1rem;">
+                    <a href="forgot_password.php?step=3&verify_via=security" style="color: #ea580c; font-size: 0.82rem; font-weight: 700; text-decoration: underline;">
+                        No email access? Verify with 3 Security Questions &rarr;
+                    </a>
+                </div>
             <?php endif; ?>
 
-            <!-- STEP 3: Security Question (Dropdown showing registered questions) -->
+            <!-- STEP 3: Security Questions (AT LEAST 2 CORRECT REQUIRED) -->
             <?php if ($step === 3): ?>
                 <form method="post" action="forgot_password.php?step=3">
-                    <div class="form-group">
-                        <label class="form-label">Security Question <span style="color: #ef4444;">*</span></label>
-                        <select name="security_question" class="input-control" style="cursor: pointer;" required>
-                            <?php if (!empty($user_security_questions)): ?>
-                                <?php foreach ($user_security_questions as $idx => $sq): ?>
-                                    <option value="<?php echo htmlspecialchars($sq); ?>"><?php echo htmlspecialchars($sq); ?></option>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
-                                <option value="What is the name of your favorite teacher?">What is the name of your favorite teacher?</option>
-                                <option value="What is your favorite color?">What is your favorite color?</option>
-                            <?php endif; ?>
-                        </select>
-                    </div>
+                    <p style="font-size: 0.82rem; color: #475569; margin-bottom: 1.25rem; line-height: 1.5; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; text-align: left;">
+                        🛡️ Please answer the registered security questions below. You must correctly answer at least <strong>two (2) out of the three (3) questions</strong> to proceed.
+                    </p>
 
-                    <div class="form-group">
-                        <label class="form-label" for="securityAnswerInput">Your Answer <span style="color: #ef4444;">*</span></label>
-                        <input type="text" name="security_answer" id="securityAnswerInput" class="input-control" placeholder="Enter your registered answer" required autocomplete="off">
-                    </div>
+                    <?php for ($i = 1; $i <= 3; $i++): ?>
+                        <div class="form-group" style="margin-bottom: 1.2rem;">
+                            <label class="form-label" style="display: flex; align-items: center; gap: 0.4rem; color: #1e293b; font-size: 0.78rem;">
+                                <span style="background: rgba(245, 158, 11, 0.15); color: #d97706; padding: 2px 7px; border-radius: 4px; font-weight: 800;">Q<?php echo $i; ?></span>
+                                <span><?php echo htmlspecialchars($user_security_questions[$i] ?? "Security Question $i"); ?></span>
+                                <span style="color: #ef4444;">*</span>
+                            </label>
+                            <input type="text" name="security_answer<?php echo $i; ?>" id="securityAnswer<?php echo $i; ?>" class="input-control" placeholder="Enter answer for Question <?php echo $i; ?>" required autocomplete="off">
+                        </div>
+                    <?php endfor; ?>
 
-                    <button type="submit" name="submit_security" class="btn-submit">
-                        <span>Verify Security Answer</span>
+                    <button type="submit" name="submit_security" class="btn-submit" style="margin-top: 0.5rem;">
+                        <span>Verify Security Answers</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                     </button>
                 </form>

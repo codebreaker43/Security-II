@@ -13,6 +13,7 @@ enforce_profile_completion($conn);
 // --- Filter Logic ---
 $filter_role     = isset($_GET['role']) ? trim($_GET['role']) : '';
 $filter_action   = isset($_GET['action']) ? trim($_GET['action']) : '';
+$filter_idno     = isset($_GET['idno']) ? trim($_GET['idno']) : '';
 $filter_username = isset($_GET['username']) ? trim($_GET['username']) : '';
 $filter_date_from = isset($_GET['date_from']) ? trim($_GET['date_from']) : '';
 $filter_date_to   = isset($_GET['date_to']) ? trim($_GET['date_to']) : '';
@@ -29,6 +30,11 @@ if ($filter_role !== '') {
 if ($filter_action !== '') {
     $where_clauses[] = "action = ?";
     $params[] = $filter_action;
+    $types .= 's';
+}
+if ($filter_idno !== '') {
+    $where_clauses[] = "user_id LIKE ?";
+    $params[] = '%' . $filter_idno . '%';
     $types .= 's';
 }
 if ($filter_username !== '') {
@@ -53,7 +59,7 @@ if (!empty($where_clauses)) {
 }
 
 // --- Pagination ---
-$per_page = 15;
+$per_page = 10;
 $current_page = isset($_GET['page']) && is_numeric($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 
 // Count total matching rows
@@ -88,47 +94,9 @@ $all_roles = mysqli_fetch_all($roles_result, MYSQLI_ASSOC);
 $actions_result = mysqli_query($conn, "SELECT DISTINCT action FROM audit_logs ORDER BY action ASC");
 $all_actions = mysqli_fetch_all($actions_result, MYSQLI_ASSOC);
 
-// Process logs to merge Login/Logout
-$processed_logs = [];
-$logout_stack = []; // user_id => stack of logout logs
-
-foreach ($logs as $index => $log) {
-    if ($log['action'] === 'Logout') {
-        $logout_stack[$log['user_id']][] = $log;
-        $log['is_logout_row'] = true;
-        $processed_logs[$index] = $log;
-    } elseif ($log['action'] === 'Login') {
-        if (isset($logout_stack[$log['user_id']]) && !empty($logout_stack[$log['user_id']])) {
-            $matched_logout = array_shift($logout_stack[$log['user_id']]);
-            $log['time_out'] = $matched_logout['timestamp'];
-        } else {
-            $log['time_out'] = null;
-        }
-        $processed_logs[$index] = $log;
-    } else {
-        $processed_logs[$index] = $log;
-    }
-}
-
-// Second pass with better index tracking
 $final_logs = $logs;
-$logout_indices = [];
 
-foreach ($final_logs as $i => $log) {
-    if ($log['action'] === 'Logout') {
-        $logout_indices[$log['user_id']][] = $i;
-    } elseif ($log['action'] === 'Login') {
-        if (isset($logout_indices[$log['user_id']]) && !empty($logout_indices[$log['user_id']])) {
-            $logout_idx = array_pop($logout_indices[$log['user_id']]);
-            $final_logs[$i]['time_out'] = $final_logs[$logout_idx]['timestamp'];
-            $final_logs[$logout_idx]['skip_render'] = true;
-        } else {
-            $final_logs[$i]['time_out'] = null;
-        }
-    }
-}
-
-$has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username !== '' || $filter_date_from !== '' || $filter_date_to !== '');
+$has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_idno !== '' || $filter_username !== '' || $filter_date_from !== '' || $filter_date_to !== '');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -536,6 +504,11 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
                         </select>
                     </div>
                     <div class="filter-group">
+                        <label for="filter-idno">ID Number</label>
+                        <input type="text" name="idno" id="filter-idno" placeholder="Search ID..."
+                               value="<?php echo htmlspecialchars($filter_idno); ?>">
+                    </div>
+                    <div class="filter-group">
                         <label for="filter-username">Username</label>
                         <input type="text" name="username" id="filter-username" placeholder="Search username..."
                                value="<?php echo htmlspecialchars($filter_username); ?>">
@@ -561,13 +534,7 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
                             </a>
                         <?php endif; ?>
                     </div>
-                </div>
-                <?php
-                    $visible_count = 0;
-                    foreach ($final_logs as $row) {
-                        if (isset($row['skip_render']) && $row['skip_render']) continue;
-                        $visible_count++;
-                    }
+                </div>                <?php
                     $range_start = $total_logs > 0 ? $offset + 1 : 0;
                     $range_end   = min($offset + $per_page, $total_logs);
                 ?>
@@ -584,25 +551,20 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
                 <table>
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>User ID</th>
                             <th>Username</th>
                             <th>Role</th>
                             <th>Action</th>
                             <th>Details</th>
-                            <th>Time In</th>
-                            <th>Time Out</th>
+                            <th>Date &amp; Time</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (!empty($final_logs)): ?>
                             <?php foreach ($final_logs as $row): ?>
-                                <?php if (isset($row['skip_render']) && $row['skip_render'])
-                                    continue; ?>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($row['id']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['user_id']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['username']); ?></td>
+                                    <td style="font-family: monospace; font-weight: 700; color: #0284c7;"><?php echo htmlspecialchars($row['user_id']); ?></td>
+                                    <td style="color: #b45309; font-weight: 700;"><?php echo htmlspecialchars($row['username']); ?></td>
                                     <td>
                                         <?php
                                         if ($row['role'] == 'superadmin') {
@@ -632,89 +594,77 @@ $has_filters = ($filter_role !== '' || $filter_action !== '' || $filter_username
                                         </span>
                                     </td>
                                     <td><?php echo htmlspecialchars($row['details']); ?></td>
-                                    <td>
-                                        <?php echo ($row['action'] === 'Login') ? htmlspecialchars($row['timestamp']) : (($row['action'] !== 'Logout') ? htmlspecialchars($row['timestamp']) : ''); ?>
-                                    </td>
-                                    <td>
-                                        <?php
-                                        if ($row['action'] === 'Login') {
-                                            echo $row['time_out'] ? htmlspecialchars($row['time_out']) : '<span style="color: var(--accent-green)">Active</span>';
-                                        } elseif ($row['action'] === 'Logout') {
-                                            echo htmlspecialchars($row['timestamp']); // Orphaned logout
-                                        } else {
-                                            echo '';
-                                        }
-                                        ?>
-                                    </td>
+                                    <td style="white-space: nowrap;"><?php echo htmlspecialchars($row['timestamp']); ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="8" style="text-align: center;">No logs found.</td>
+                                <td colspan="6" style="text-align: center;">No logs found.</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
             </div>
+        </div>
 
+        <?php
+        $query_params = array_filter([
+            'role'      => $filter_role,
+            'action'    => $filter_action,
+            'idno'      => $filter_idno,
+            'username'  => $filter_username,
+            'date_from' => $filter_date_from,
+            'date_to'   => $filter_date_to,
+        ]);
+
+        if (!function_exists('pagLink')) {
+            function pagLink($query_params, $p, $label, $isCurrent = false, $isDots = false) {
+                if ($isDots) return "<span class='dots'>$label</span>";
+                $cls = $isCurrent ? ' class="active"' : '';
+                $params = $query_params;
+                $params['page'] = $p;
+                $url = 'audit_logs.php?' . http_build_query($params);
+                return "<a href='{$url}'{$cls}>{$label}</a>";
+            }
+        }
+
+        if ($total_pages > 1):
+        ?>
+        <div class="pagination">
             <?php
-            $query_params = array_filter([
-                'role'      => $filter_role,
-                'action'    => $filter_action,
-                'username'  => $filter_username,
-                'date_from' => $filter_date_from,
-                'date_to'   => $filter_date_to,
-            ]);
+            if ($current_page > 1) {
+                echo pagLink($query_params, $current_page - 1, '&laquo; Prev');
+            } else {
+                echo '<span class="disabled" style="opacity:0.35;pointer-events:none">&laquo; Prev</span>';
+            }
 
-            if (!function_exists('pagLink')) {
-                function pagLink($query_params, $p, $label, $isCurrent = false, $isDots = false) {
-                    if ($isDots) return "<span class='dots'>$label</span>";
-                    $cls = $isCurrent ? ' class="active"' : '';
-                    $params = $query_params;
-                    $params['page'] = $p;
-                    $url = 'audit_logs.php?' . http_build_query($params);
-                    return "<a href='{$url}'{$cls}>{$label}</a>";
+            $window = 2;
+            $pages_to_show = [];
+            for ($p = 1; $p <= $total_pages; $p++) {
+                if ($p === 1 || $p === $total_pages ||
+                    ($p >= $current_page - $window && $p <= $current_page + $window)) {
+                    $pages_to_show[] = $p;
                 }
             }
 
-            if ($total_pages > 1):
+            $prev_p = null;
+            foreach ($pages_to_show as $p) {
+                if ($prev_p !== null && $p - $prev_p > 1) {
+                    echo pagLink($query_params, 0, '&hellip;', false, true);
+                }
+                echo pagLink($query_params, $p, $p, $p === $current_page);
+                $prev_p = $p;
+            }
+
+            if ($current_page < $total_pages) {
+                echo pagLink($query_params, $current_page + 1, 'Next &raquo;');
+            } else {
+                echo '<span class="disabled" style="opacity:0.35;pointer-events:none">Next &raquo;</span>';
+            }
             ?>
-            <div class="pagination">
-                <?php
-                if ($current_page > 1) {
-                    echo pagLink($query_params, $current_page - 1, '&laquo; Prev');
-                } else {
-                    echo '<span style="opacity:0.35;pointer-events:none">&laquo; Prev</span>';
-                }
-
-                $window = 2;
-                $pages_to_show = [];
-                for ($p = 1; $p <= $total_pages; $p++) {
-                    if ($p === 1 || $p === $total_pages ||
-                        ($p >= $current_page - $window && $p <= $current_page + $window)) {
-                        $pages_to_show[] = $p;
-                    }
-                }
-
-                $prev_p = null;
-                foreach ($pages_to_show as $p) {
-                    if ($prev_p !== null && $p - $prev_p > 1) {
-                        echo pagLink($query_params, 0, '&hellip;', false, true);
-                    }
-                    echo pagLink($query_params, $p, $p, $p === $current_page);
-                    $prev_p = $p;
-                }
-
-                if ($current_page < $total_pages) {
-                    echo pagLink($query_params, $current_page + 1, 'Next &raquo;');
-                } else {
-                    echo '<span style="opacity:0.35;pointer-events:none">Next &raquo;</span>';
-                }
-                ?>
-            </div>
-            <div class="pagination-info">Page <?php echo $current_page; ?> of <?php echo $total_pages; ?></div>
-            <?php endif; ?>
         </div>
+        <div class="pagination-info">Page <?php echo $current_page; ?> of <?php echo $total_pages; ?></div>
+        <?php endif; ?>
             </main>
         </div>
     </div>

@@ -1,4 +1,4 @@
-<?php
+                        <?php
 session_start();
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'superadmin') {
     header("Location: ../login.php");
@@ -31,6 +31,10 @@ $blocked_count = ($blocked_result && mysqli_num_rows($blocked_result) > 0) ? mys
 $total_query = "SELECT COUNT(*) as count FROM user WHERE role != 'superadmin'";
 $total_result = mysqli_query($conn, $total_query);
 $total_users = ($total_result && mysqli_num_rows($total_result) > 0) ? mysqli_fetch_assoc($total_result)['count'] : 0;
+
+// 5. Active Super Admin Info
+$sa_active_res = mysqli_query($conn, "SELECT name, email FROM admins WHERE status = 'Active' LIMIT 1");
+$current_active_sa = ($sa_active_res && mysqli_num_rows($sa_active_res) > 0) ? mysqli_fetch_assoc($sa_active_res) : null;
 
 ?>
 <!DOCTYPE html>
@@ -255,6 +259,16 @@ $total_users = ($total_result && mysqli_num_rows($total_result) > 0) ? mysqli_fe
                         <?php echo htmlspecialchars($_SESSION['username']); ?>.
                     </p>
 
+                    <?php if (isset($_GET['activated']) || isset($_GET['switched'])): ?>
+                    <div style="background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.45); padding: 1.1rem 1.4rem; border-radius: 12px; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);">
+                        <span style="font-size: 2rem;">👑</span>
+                        <div>
+                            <strong style="color: #34d399; font-size: 1.05rem; display: block;">Super Admin Role Confirmed!</strong>
+                            <p style="margin: 0; color: #e2e8f0; font-size: 0.92rem;">Your account is now confirmed and set as the <strong>Active Super Admin</strong>. The previous Super Admin has been set to Inactive and their session invalidated.</p>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
                     <div class="grid-container"
                         style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem;">
 
@@ -282,7 +296,6 @@ $total_users = ($total_result && mysqli_num_rows($total_result) > 0) ? mysqli_fe
                             <small>Restricted access</small>
                         </div>
 
-
                     </div>
                 </div>
             </main>
@@ -295,4 +308,4 @@ $total_users = ($total_result && mysqli_num_rows($total_result) > 0) ? mysqli_fe
     </script>
 </body>
 
-</html>
+</html>

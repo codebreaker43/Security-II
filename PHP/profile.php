@@ -10,13 +10,23 @@ if (!isset($_SESSION['role']) || !isset($_SESSION['user_id'])) {
 
 $role = $_SESSION['role'];
 
-// Check if personal information is complete
-require_once __DIR__ . '/includes/auth_guard.php';
-$is_profile_complete = check_user_personal_info_complete($conn, $_SESSION['user_id']);
-$_SESSION['profile_completed'] = $is_profile_complete ? 1 : 0;
-if (!$is_profile_complete) {
-    header("Location: complete_profile.php");
-    exit();
+// Check if personal information is complete (only for new accounts)
+$is_profile_complete = true;
+$u_safe = mysqli_real_escape_string($conn, $_SESSION['user_id']);
+$chk_p = mysqli_query($conn, "SELECT profile_completed FROM user WHERE idno = '$u_safe' LIMIT 1");
+$is_already_complete = ($chk_p && ($rp = mysqli_fetch_assoc($chk_p)) && intval($rp['profile_completed']) === 1);
+
+if (!$is_already_complete) {
+    require_once __DIR__ . '/includes/auth_guard.php';
+    $is_profile_complete = check_user_personal_info_complete($conn, $_SESSION['user_id']);
+    $_SESSION['profile_completed'] = $is_profile_complete ? 1 : 0;
+    if (!$is_profile_complete) {
+        header("Location: complete_profile.php");
+        exit();
+    }
+} else {
+    $is_profile_complete = true;
+    $_SESSION['profile_completed'] = 1;
 }
 ?>
 <!DOCTYPE html>
@@ -472,7 +482,7 @@ if (!$is_profile_complete) {
                             </div>
                             <div style="grid-column: 1 / -1;">
                                 <span class="profile-label">Email Address *</span>
-                                <input type="email" class="profile-input" id="email" placeholder="firstname.lastname@gmail.com or name@csucc.edu.ph" readonly required>
+                                <input type="email" class="profile-input" id="email" placeholder="Enter your email address" readonly required>
                                 <small class="error-msg" id="email_error"></small>
                             </div>
                             <div>
@@ -945,7 +955,7 @@ if (!$is_profile_complete) {
                         }
 
                         // If user has incomplete profile or is arriving from first login, automatically open edit mode
-                        const isProfileIncomplete = <?php echo !$is_profile_complete ? 'true' : 'false'; ?>;
+                        const isProfileIncomplete = <?php echo (!empty($is_profile_complete) && $is_profile_complete) ? 'false' : 'true'; ?>;
                         if ((window.location.search.includes('first_login=1') || window.location.search.includes('incomplete_profile=1') || isProfileIncomplete) && !isEditing) {
                             toggleEdit();
                             // Smooth scroll to Personal Information form
@@ -1150,42 +1160,6 @@ if (!$is_profile_complete) {
             if (!emailRegex.test(val)) {
                 setProfileFieldError("email", "Please enter a valid email address.");
                 return false;
-            }
-            const parts = val.toLowerCase().split('@');
-            if (parts.length === 2 && parts[1]) {
-                const domain = parts[1];
-                const isGmail = (domain === 'gmail.com');
-                const isUniversity = /(^|\.)[a-z0-9-]+\.edu\.ph$/.test(domain) || /(^|\.)[a-z0-9-]+\.edu$/.test(domain);
-
-                if (!isGmail && !isUniversity) {
-                    setProfileFieldError("email", "Only Gmail (@gmail.com) and university email (@...edu.ph / @...edu) are allowed.");
-                    return false;
-                }
-
-                if (isGmail) {
-                    const fnEl = document.getElementById("firstname");
-                    const lnEl = document.getElementById("lastname");
-                    const fnVal = fnEl ? fnEl.value.trim() : "";
-                    const lnVal = lnEl ? lnEl.value.trim() : "";
-
-                    if (fnVal && lnVal) {
-                        const local = parts[0];
-                        const cleanFn = fnVal.toLowerCase().replace(/[^a-z0-9]/g, '');
-                        const cleanLn = lnVal.toLowerCase().replace(/[^a-z0-9]/g, '');
-                        const dotFn = fnVal.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '.');
-                        const dotLn = lnVal.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '.');
-
-                        const escapeRegex = function(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); };
-                        const r1 = new RegExp('^' + escapeRegex(cleanFn) + '\\.' + escapeRegex(cleanLn) + '[0-9]*$');
-                        const r2 = new RegExp('^' + escapeRegex(dotFn) + '\\.' + escapeRegex(dotLn) + '[0-9]*$');
-
-                        if (!r1.test(local) && !r2.test(local)) {
-                            const example = cleanFn + '.' + cleanLn + '@gmail.com';
-                            setProfileFieldError("email", "Gmail address must follow the standard: firstname.lastname@gmail.com (e.g., " + example + ").");
-                            return false;
-                        }
-                    }
-                }
             }
             clearSingleProfileFieldError("email");
             return true;

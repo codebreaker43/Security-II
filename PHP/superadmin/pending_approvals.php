@@ -414,6 +414,70 @@ include("../db.php");
             from { opacity: 0; }
             to { opacity: 1; }
         }
+
+        .approval-tabs-row {
+            display: flex;
+            gap: 0.85rem;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .approval-tab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.75rem 1.4rem;
+            border-radius: 12px;
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            background: rgba(15, 23, 42, 0.75);
+            color: #cbd5e1;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.25s ease;
+        }
+
+        .approval-tab-btn:hover {
+            background: rgba(30, 41, 59, 0.9);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.35);
+        }
+
+        .approval-tab-btn.active {
+            background: #ffffff !important;
+            color: #0f172a !important;
+            border-color: #ffffff !important;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+        }
+
+        .approval-tab-badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            background: rgba(245, 158, 11, 0.25);
+            color: #fbbf24;
+            font-size: 0.78rem;
+            font-weight: 800;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+
+        .approval-tab-btn.active .approval-tab-badge {
+            background: #0f172a !important;
+            color: #fbbf24 !important;
+            border-color: #0f172a !important;
+        }
+
+        .approval-tab-badge.badge-del {
+            background: rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        .approval-tab-btn.active .approval-tab-badge.badge-del {
+            background: #dc2626 !important;
+            color: #ffffff !important;
+            border-color: #dc2626 !important;
+        }
     </style>
 </head>
 
@@ -439,6 +503,18 @@ include("../db.php");
                     </div>
                 </div>
 
+                <!-- Approval Categories Tabs -->
+                <div class="approval-tabs-row">
+                    <button type="button" id="tabRegistrations" class="approval-tab-btn active" onclick="switchApprovalTab('registrations')">
+                        <span>👤 Registration Applications</span>
+                        <span class="approval-tab-badge" id="regCountBadge">0</span>
+                    </button>
+                    <button type="button" id="tabDeletions" class="approval-tab-btn" onclick="switchApprovalTab('deletions')">
+                        <span>🗑️ Admin Deletion Requests</span>
+                        <span class="approval-tab-badge badge-del" id="delCountBadge">0</span>
+                    </button>
+                </div>
+
                 <!-- Filter Toolbar -->
                 <div class="filter-toolbar">
                     <div class="search-input-wrapper">
@@ -446,7 +522,7 @@ include("../db.php");
                             <circle cx="11" cy="11" r="8" />
                             <line x1="21" y1="21" x2="16.65" y2="16.65" />
                         </svg>
-                        <input type="text" id="searchInput" placeholder="Search applicant by ID, Name, Username, or Email..." oninput="filterPendingAccounts()">
+                        <input type="text" id="searchInput" placeholder="Search by ID, Name, Username, or Email..." oninput="filterPendingAccounts()">
                     </div>
                     <div>
                         <a href="manage_users.php" class="btn-action" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">
@@ -458,8 +534,8 @@ include("../db.php");
                 <!-- Pending Approvals Table -->
                 <div class="table-card">
                     <table class="styled-table">
-                        <thead>
-                            <tr>
+                        <thead id="tableHead">
+                            <tr id="tableHeadRow">
                                 <th>ID Number</th>
                                 <th>Applicant Name</th>
                                 <th>Username</th>
@@ -521,9 +597,23 @@ include("../db.php");
                     <div class="applicant-label">Address</div>
                     <div class="applicant-value" id="viewAddress">-</div>
                 </div>
-                <div class="applicant-field span-2">
+                <div class="applicant-field span-2" id="applicationStatusField">
                     <div class="applicant-label">Application Status</div>
-                    <div class="applicant-value"><span class="badge badge-status-pending">PENDING APPROVAL</span></div>
+                    <div class="applicant-value" id="viewStatusBadge"><span class="badge badge-status-pending">PENDING APPROVAL</span></div>
+                </div>
+
+                <!-- Admin Deletion Request Details (shown for deletion requests) -->
+                <div class="applicant-field span-2" id="deletionInfoSection" style="display: none; background: rgba(239, 68, 68, 0.12); border: 1.5px solid rgba(239, 68, 68, 0.4); border-radius: 10px; padding: 0.85rem 1rem;">
+                    <div class="applicant-label" style="color: #fca5a5; font-size: 0.8rem; font-weight: 800; margin-bottom: 0.35rem;">⚠️ Admin Deletion Request Details</div>
+                    <div style="font-size: 0.88rem; color: #cbd5e1; margin-bottom: 0.5rem;" id="viewRequestedByText">-</div>
+                    
+                    <div class="applicant-label" style="color: #f87171; margin-top: 0.5rem;">Reason for Deletion</div>
+                    <div class="applicant-value" id="viewDeletionReasonText" style="color: #ffffff; white-space: pre-wrap; font-weight: 500; font-size: 0.9rem; margin-top: 0.25rem;">-</div>
+
+                    <div id="viewDeletionFileWrap" style="margin-top: 0.6rem; display: none;">
+                        <span class="applicant-label" style="color: #60a5fa; display: block; margin-bottom: 0.2rem;">Attached Supporting File:</span>
+                        <div id="viewDeletionFileVal"></div>
+                    </div>
                 </div>
             </div>
 
@@ -563,24 +653,73 @@ include("../db.php");
     </div>
 
     <script>
-        let allPendingAccounts = [];
+        let allPendingRegistrations = [];
+        let allDeletionRequests = [];
+        let currentTab = 'registrations';
         let pendingActionPayload = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             loadPendingAccounts();
         });
 
+        function switchApprovalTab(tab) {
+            currentTab = tab;
+            
+            const btnReg = document.getElementById('tabRegistrations');
+            const btnDel = document.getElementById('tabDeletions');
+            const thead = document.getElementById('tableHeadRow');
+
+            if (tab === 'registrations') {
+                btnReg.classList.add('active');
+                btnDel.classList.remove('active');
+                thead.innerHTML = `
+                    <th>ID Number</th>
+                    <th>Applicant Name</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                `;
+            } else {
+                btnDel.classList.add('active');
+                btnReg.classList.remove('active');
+                thead.innerHTML = `
+                    <th>User Account</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Requested By Admin</th>
+                    <th>Reason for Deletion</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                `;
+            }
+
+            filterPendingAccounts();
+        }
+
         function loadPendingAccounts() {
             fetch('../api/manage_users_api.php')
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        // Strictly filter pending registrations only
-                        allPendingAccounts = (data.users || []).filter(u => u.status === 'pending');
-                        renderPendingTable(allPendingAccounts);
-                        updatePendingChip(allPendingAccounts.length);
+                        const users = data.users || [];
+                        allPendingRegistrations = users.filter(u => u.status === 'pending');
+                        allDeletionRequests = users.filter(u => u.status === 'pending_deletion');
+
+                        // Update badges
+                        const regBadge = document.getElementById('regCountBadge');
+                        const delBadge = document.getElementById('delCountBadge');
+                        if (regBadge) regBadge.textContent = allPendingRegistrations.length;
+                        if (delBadge) delBadge.textContent = allDeletionRequests.length;
+
+                        // Update chip
+                        updatePendingChip(allPendingRegistrations.length, allDeletionRequests.length);
+
+                        // Render active tab
+                        filterPendingAccounts();
                     } else {
-                        alert(data.error || 'Failed to load pending registrations');
+                        alert(data.error || 'Failed to load pending accounts');
                     }
                 })
                 .catch(err => {
@@ -588,75 +727,135 @@ include("../db.php");
                 });
         }
 
-        function updatePendingChip(count) {
+        function updatePendingChip(regCount, delCount) {
             const chip = document.getElementById('pendingCountText');
             if (chip) {
-                chip.textContent = `${count} Pending Application${count === 1 ? '' : 's'}`;
+                chip.textContent = `${regCount} Registration${regCount === 1 ? '' : 's'} | ${delCount} Deletion Request${delCount === 1 ? '' : 's'}`;
             }
-        }
-
-        function renderPendingTable(accounts) {
-            const tbody = document.getElementById('pendingTableBody');
-            if (!accounts || accounts.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7">
-                            <div class="empty-state-box">
-                                <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                                </svg>
-                                <h3 style="color: #0f172a; margin-bottom: 0.5rem; font-weight: 800;">No Pending Approvals</h3>
-                                <p style="margin: 0 0 1.25rem 0; color: #64748b;">All user registrations have been reviewed. There are no pending applications waiting for approval.</p>
-                                <a href="manage_users.php" class="btn-action" style="background: #0f172a; color: #ffffff; padding: 0.6rem 1.2rem;">Go to Account Management</a>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = accounts.map(acc => {
-                const fullName = `${acc.firstname || ''} ${acc.lastname || ''}`.trim() || acc.username;
-                const roleBadge = `<span class="badge badge-role-${acc.role}">${acc.role}</span>`;
-                const statusBadge = `<span class="badge badge-status-pending">PENDING</span>`;
-
-                return `
-                    <tr>
-                        <td style="font-family: monospace; font-weight: 700; color: #2563eb; letter-spacing: 0.5px;">${acc.idno || 'N/A'}</td>
-                        <td style="font-weight: 600; color: #0f172a;">${escapeHtml(fullName)}</td>
-                        <td style="color: #d97706; font-weight: 700;">${escapeHtml(acc.username)}</td>
-                        <td style="color: #475569;">${escapeHtml(acc.email || 'N/A')}</td>
-                        <td>${roleBadge}</td>
-                        <td>${statusBadge}</td>
-                        <td>
-                            <div class="action-btn-group">
-                                <button class="btn-action btn-view" onclick="openViewApplicant('${acc.idno}')">View</button>
-                                <button class="btn-action btn-approve" onclick="promptApprove('${acc.idno}', '${escapeHtml(acc.username)}')">Approve</button>
-                                <button class="btn-action btn-reject" onclick="promptReject('${acc.idno}', '${escapeHtml(acc.username)}')">Reject</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
         }
 
         function filterPendingAccounts() {
             const search = document.getElementById('searchInput').value.toLowerCase().trim();
-            const filtered = allPendingAccounts.filter(acc => {
+            const sourceList = currentTab === 'registrations' ? allPendingRegistrations : allDeletionRequests;
+
+            const filtered = sourceList.filter(acc => {
                 const fullName = `${acc.firstname || ''} ${acc.lastname || ''}`.toLowerCase();
                 const username = (acc.username || '').toLowerCase();
                 const idno = (acc.idno || '').toLowerCase();
                 const email = (acc.email || '').toLowerCase();
+                const reason = (acc.delete_reason || '').toLowerCase();
+                const requestedBy = (acc.delete_requested_by || '').toLowerCase();
 
-                return !search || fullName.includes(search) || username.includes(search) || idno.includes(search) || email.includes(search);
+                return !search || fullName.includes(search) || username.includes(search) || idno.includes(search) || email.includes(search) || reason.includes(search) || requestedBy.includes(search);
             });
 
             renderPendingTable(filtered);
         }
 
-        function openViewApplicant(idno) {
-            const acc = allPendingAccounts.find(a => (a.idno || a.id) == idno);
+        function renderPendingTable(accounts) {
+            const tbody = document.getElementById('pendingTableBody');
+            if (!accounts || accounts.length === 0) {
+                if (currentTab === 'registrations') {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state-box">
+                                    <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                    <h3 style="color: #0f172a; margin-bottom: 0.5rem; font-weight: 800;">No Pending Registrations</h3>
+                                    <p style="margin: 0 0 1.25rem 0; color: #64748b;">All user registrations have been reviewed. There are no pending applications waiting for approval.</p>
+                                    <a href="manage_users.php" class="btn-action" style="background: #0f172a; color: #ffffff; padding: 0.6rem 1.2rem;">Go to Account Management</a>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state-box">
+                                    <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">🗑️</div>
+                                    <h3 style="color: #0f172a; margin-bottom: 0.5rem; font-weight: 800;">No Deletion Requests</h3>
+                                    <p style="margin: 0 0 1.25rem 0; color: #64748b;">There are currently no user deletion requests submitted by admins awaiting your review.</p>
+                                    <a href="manage_users.php" class="btn-action" style="background: #0f172a; color: #ffffff; padding: 0.6rem 1.2rem;">Go to Account Management</a>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+                return;
+            }
+
+            if (currentTab === 'registrations') {
+                tbody.innerHTML = accounts.map(acc => {
+                    const fullName = `${acc.firstname || ''} ${acc.lastname || ''}`.trim() || acc.username;
+                    const roleBadge = `<span class="badge badge-role-${acc.role}">${acc.role}</span>`;
+                    const statusBadge = `<span class="badge badge-status-pending">PENDING</span>`;
+
+                    return `
+                        <tr>
+                            <td style="font-family: monospace; font-weight: 700; color: #2563eb; letter-spacing: 0.5px;">${acc.idno || 'N/A'}</td>
+                            <td style="font-weight: 600; color: #0f172a;">${escapeHtml(fullName)}</td>
+                            <td style="color: #d97706; font-weight: 700;">${escapeHtml(acc.username)}</td>
+                            <td style="color: #475569;">${escapeHtml(acc.email || 'N/A')}</td>
+                            <td>${roleBadge}</td>
+                            <td>${statusBadge}</td>
+                            <td>
+                                <div class="action-btn-group">
+                                    <button class="btn-action btn-view" onclick="openViewApplicant('${acc.idno}', 'registration')">View</button>
+                                    <button class="btn-action btn-approve" onclick="promptApprove('${acc.idno}', '${escapeHtml(acc.username)}')">Approve</button>
+                                    <button class="btn-action btn-reject" onclick="promptReject('${acc.idno}', '${escapeHtml(acc.username)}')">Reject</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } else {
+                tbody.innerHTML = accounts.map(acc => {
+                    const fullName = `${acc.firstname || ''} ${acc.lastname || ''}`.trim() || acc.username;
+                    const roleBadge = `<span class="badge badge-role-${acc.role}">${acc.role}</span>`;
+                    const statusBadge = `<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 800;">PENDING DELETION</span>`;
+                    const requestedBy = acc.delete_requested_by ? escapeHtml(acc.delete_requested_by) : 'Admin';
+                    const dateFormatted = acc.delete_requested_at ? `<div style="font-size: 0.75rem; color: #64748b; margin-top: 0.15rem;">${escapeHtml(acc.delete_requested_at)}</div>` : '';
+                    
+                    const reasonText = acc.delete_reason ? escapeHtml(acc.delete_reason) : 'No reason specified';
+                    const reasonSnippet = reasonText.length > 50 ? reasonText.substring(0, 50) + '...' : reasonText;
+
+                    return `
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700; color: #0f172a;">${escapeHtml(fullName)}</div>
+                                <div style="font-family: monospace; font-size: 0.78rem; color: #2563eb; font-weight: 600;">ID: ${acc.idno || 'N/A'}</div>
+                            </td>
+                            <td style="color: #d97706; font-weight: 700;">${escapeHtml(acc.username)}</td>
+                            <td>${roleBadge}</td>
+                            <td>
+                                <div style="font-weight: 700; color: #b91c1c;">${requestedBy}</div>
+                                ${dateFormatted}
+                            </td>
+                            <td style="max-width: 220px;" title="${reasonText}">
+                                <div style="font-size: 0.86rem; color: #334155; line-height: 1.35;">${reasonSnippet}</div>
+                                ${acc.delete_file ? `<div style="margin-top: 0.2rem;"><a href="../${escapeHtml(acc.delete_file)}" target="_blank" style="font-size: 0.75rem; color: #2563eb; font-weight: 600; text-decoration: underline;">📎 Attached File</a></div>` : ''}
+                            </td>
+                            <td>${statusBadge}</td>
+                            <td>
+                                <div class="action-btn-group">
+                                    <button class="btn-action btn-view" onclick="openViewApplicant('${acc.idno}', 'deletion')">View Details</button>
+                                    <button class="btn-action" style="background: #ef4444; color: #ffffff;" onclick="promptApproveDeletion('${acc.idno}', '${escapeHtml(acc.username)}')">Approve Delete</button>
+                                    <button class="btn-action" style="background: #475569; color: #ffffff;" onclick="promptRejectDeletion('${acc.idno}', '${escapeHtml(acc.username)}')">Reject</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        function openViewApplicant(idno, type) {
+            const all = [...allPendingRegistrations, ...allDeletionRequests];
+            const acc = all.find(a => (a.idno || a.id) == idno);
             if (!acc) return;
 
             document.getElementById('viewIdNo').textContent = acc.idno || 'N/A';
@@ -678,15 +877,74 @@ include("../db.php");
             const addrParts = [acc.purokstreet, acc.brgy, acc.municipal, acc.province, acc.country, acc.zipcode].filter(Boolean);
             document.getElementById('viewAddress').textContent = addrParts.length > 0 ? addrParts.join(', ') : 'Not provided';
 
-            // Modal Buttons binding
-            document.getElementById('btnModalApprove').onclick = () => {
-                closeModal('viewApplicantModal');
-                promptApprove(acc.idno, acc.username);
-            };
-            document.getElementById('btnModalReject').onclick = () => {
-                closeModal('viewApplicantModal');
-                promptReject(acc.idno, acc.username);
-            };
+            const modalTitle = document.getElementById('modalApplicantTitle');
+            const statusBadge = document.getElementById('viewStatusBadge');
+            const deletionSection = document.getElementById('deletionInfoSection');
+            const btnApprove = document.getElementById('btnModalApprove');
+            const btnReject = document.getElementById('btnModalReject');
+
+            if (type === 'deletion' || acc.status === 'pending_deletion') {
+                modalTitle.textContent = 'Account Info & Deletion Request';
+                statusBadge.innerHTML = '<span class="badge" style="background: rgba(239, 68, 68, 0.25); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.5); font-weight: 800;">PENDING DELETION</span>';
+                
+                // Show Deletion Info Box
+                deletionSection.style.display = 'block';
+                const reqBy = escapeHtml(acc.delete_requested_by || 'Admin');
+                const reqAt = acc.delete_requested_at ? ` on <span style="color: #94a3b8;">${escapeHtml(acc.delete_requested_at)}</span>` : '';
+                document.getElementById('viewRequestedByText').innerHTML = `Submitted by: <strong style="color: #ffffff;">${reqBy}</strong>${reqAt}`;
+                document.getElementById('viewDeletionReasonText').textContent = acc.delete_reason || 'No specific reason provided.';
+
+                const fileWrap = document.getElementById('viewDeletionFileWrap');
+                const fileVal = document.getElementById('viewDeletionFileVal');
+                if (acc.delete_file) {
+                    fileWrap.style.display = 'block';
+                    fileVal.innerHTML = `<a href="../${escapeHtml(acc.delete_file)}" target="_blank" style="color: #38bdf8; text-decoration: underline; font-weight: 600;">📄 View Attached File / Supporting Document</a>`;
+                } else {
+                    fileWrap.style.display = 'none';
+                }
+
+                // Modal Buttons
+                btnApprove.textContent = 'Approve Deletion (Permanently Delete)';
+                btnApprove.className = 'btn-action';
+                btnApprove.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                btnApprove.style.color = '#ffffff';
+                btnApprove.onclick = () => {
+                    closeModal('viewApplicantModal');
+                    promptApproveDeletion(acc.idno, acc.username);
+                };
+
+                btnReject.textContent = 'Reject Request (Keep Active)';
+                btnReject.className = 'btn-action';
+                btnReject.style.background = '#475569';
+                btnReject.style.color = '#ffffff';
+                btnReject.onclick = () => {
+                    closeModal('viewApplicantModal');
+                    promptRejectDeletion(acc.idno, acc.username);
+                };
+            } else {
+                modalTitle.textContent = 'Applicant Information';
+                statusBadge.innerHTML = '<span class="badge badge-status-pending">PENDING APPROVAL</span>';
+                deletionSection.style.display = 'none';
+
+                // Modal Buttons
+                btnApprove.textContent = 'Approve Account';
+                btnApprove.className = 'btn-action btn-approve';
+                btnApprove.style.background = '';
+                btnApprove.style.color = '';
+                btnApprove.onclick = () => {
+                    closeModal('viewApplicantModal');
+                    promptApprove(acc.idno, acc.username);
+                };
+
+                btnReject.textContent = 'Reject';
+                btnReject.className = 'btn-action btn-reject';
+                btnReject.style.background = '';
+                btnReject.style.color = '';
+                btnReject.onclick = () => {
+                    closeModal('viewApplicantModal');
+                    promptReject(acc.idno, acc.username);
+                };
+            }
 
             openModal('viewApplicantModal');
         }
@@ -726,13 +984,47 @@ include("../db.php");
             document.getElementById('actionReason').focus();
         }
 
+        function promptApproveDeletion(idno, username) {
+            pendingActionPayload = {
+                action: 'approve_deletion',
+                user_id: idno,
+                username: username
+            };
+            document.getElementById('verifIcon').textContent = '🗑️';
+            document.getElementById('verifTitle').textContent = `Approve Deletion (${username})`;
+            document.getElementById('verifPrompt').textContent = `Are you sure you want to approve the deletion of user account "${username}"? This will permanently delete the account and its data from the system.`;
+            document.getElementById('reasonGroup').style.display = 'none';
+            document.getElementById('btnConfirmAction').textContent = 'Permanently Delete User';
+            document.getElementById('btnConfirmAction').style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+            document.getElementById('adminConfirmPassword').value = '';
+            openModal('verificationModal');
+            document.getElementById('adminConfirmPassword').focus();
+        }
+
+        function promptRejectDeletion(idno, username) {
+            pendingActionPayload = {
+                action: 'reject_deletion',
+                user_id: idno,
+                username: username
+            };
+            document.getElementById('verifIcon').textContent = '↩️';
+            document.getElementById('verifTitle').textContent = `Reject Deletion Request (${username})`;
+            document.getElementById('verifPrompt').textContent = `Are you sure you want to reject this deletion request for "${username}"? The account will be restored to Active status and deletion flags cleared.`;
+            document.getElementById('reasonGroup').style.display = 'none';
+            document.getElementById('btnConfirmAction').textContent = 'Restore Account to Active';
+            document.getElementById('btnConfirmAction').style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            document.getElementById('adminConfirmPassword').value = '';
+            openModal('verificationModal');
+            document.getElementById('adminConfirmPassword').focus();
+        }
+
         function executeVerifiedAction(e) {
             e.preventDefault();
             if (!pendingActionPayload) return;
 
             const password = document.getElementById('adminConfirmPassword').value;
             if (!password) {
-                alert('Please enter your administrator password.');
+                alert('Please enter your Super Admin password to verify this action.');
                 return;
             }
 
